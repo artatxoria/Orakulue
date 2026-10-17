@@ -124,3 +124,36 @@ def test_el_evaluador_mide_acierto_y_rango(tmp_path):
         resultado = EvaluadorBusqueda().evaluar(Buscador(indice, VectoresDePalabras(), catalogo), preguntas, "palabras")
     assert resultado.acierto == 0.5 and resultado.rango_reciproco == 0.5
     assert resultado.fallos == ("algo que no existe en ninguna parte",)
+
+
+def test_las_versiones_salen_como_un_solo_resultado_y_heredan_lo_personal(tmp_path):
+    from dataclasses import replace
+
+    from orakulue.aplicacion.agrupador_variantes import AgrupadorVariantes
+
+    base, _, catalogo, _ = preparar(tmp_path)
+    ficha = tmp_path / "ficha.md"
+    # «a» y «c» son versiones del mismo documento (mismo título de ficha);
+    # «c» tiene datos personales.
+    catalogo["a" * 64] = replace(catalogo["a" * 64], titulo="Guion del curso de tablas", ruta_ficha=ficha)
+    catalogo["c" * 64] = replace(catalogo["c" * 64], titulo="Guion del curso de tablas.", ruta_ficha=ficha)
+    variantes = AgrupadorVariantes().agrupar(catalogo, {})
+    assert variantes["a" * 64] == variantes["c" * 64] and "b" * 64 not in variantes
+
+    with AlmacenIndice(base) as indice:
+        resultados = Buscador(indice, VectoresDePalabras(), catalogo, variantes).buscar(
+            "función columna tabla alumnos notas", 5, "palabras"
+        )
+    huellas = [r.info.huella for r in resultados]
+    assert ("a" * 64 in huellas) != ("c" * 64 in huellas)  # solo uno de los dos
+    agrupado = next(r for r in resultados if r.variantes)
+    assert agrupado.info.personal  # basta que una versión sea personal
+
+
+def test_los_titulos_cortos_no_agrupan():
+    from orakulue.aplicacion.agrupador_variantes import AgrupadorVariantes
+
+    catalogo = {
+        h: InfoDocumento(h, (Path(f"/{h}.pdf"),), "Ejercicio 3", ruta_ficha=Path("/f.md")) for h in ("x", "y")
+    }
+    assert AgrupadorVariantes().agrupar(catalogo, {}) == {}

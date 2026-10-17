@@ -78,9 +78,15 @@ class EvaluadorBusqueda:
         """
         aciertos, reciprocos, fallos = 0, 0.0, []
         for pregunta in preguntas:
-            encontrados = [r.info.huella for r in buscador.buscar(pregunta.texto, self.PROFUNDIDAD, modo)]
+            # Un resultado cuenta con todas sus variantes: si el esperado sale
+            # agrupado bajo otra versión del mismo documento, también es acierto.
+            encontrados = [
+                {r.info.huella, *(v.huella for v in r.variantes)}
+                for r in buscador.buscar(pregunta.texto, self.PROFUNDIDAD, modo)
+            ]
             posicion = next(
-                (n for n, h in enumerate(encontrados, start=1) if any(h.startswith(e) for e in pregunta.esperados)),
+                (n for n, huellas in enumerate(encontrados, start=1)
+                 if any(h.startswith(e) for h in huellas for e in pregunta.esperados)),
                 None,
             )
             if posicion is None:

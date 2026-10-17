@@ -4,7 +4,7 @@ La búsqueda es local: no sale nada del PC de sobremesa ni cuesta nada.
 """
 
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from orakulue.dominio.info_documento import InfoDocumento
 from orakulue.infraestructura.almacen_indice import AlmacenIndice
@@ -22,12 +22,15 @@ class ResultadoBusqueda:
         pasaje: el trozo de texto que mejor casa con la consulta.
         piezas: identificadores de las piezas del documento que han salido,
             de mejor a peor (para elegir pasajes al responder).
+        variantes: otras versiones del mismo documento que también han salido,
+            agrupadas bajo este resultado.
     """
 
     info: InfoDocumento
     puntuacion: float
     pasaje: str
     piezas: tuple[int, ...]
+    variantes: tuple[InfoDocumento, ...] = ()
 
 
 class Buscador:
@@ -52,17 +55,24 @@ class Buscador:
     #: valores de K y de piezas por documento.
     PESO_FICHA = 2.0
 
-    def __init__(self, indice: AlmacenIndice, vectores: ClienteVectores, catalogo: dict[str, InfoDocumento]) -> None:
+    def __init__(
+        self, indice: AlmacenIndice, vectores: ClienteVectores, catalogo: dict[str, InfoDocumento],
+        variantes: dict[str, str] | None = None,
+    ) -> None:
         """Prepara el buscador.
 
         Args:
             indice: almacén del índice.
             vectores: cliente de vectores (para la consulta).
             catalogo: información de presentación por huella.
+            variantes: clave de grupo de variantes por huella (ver
+                ``AgrupadorVariantes``); los documentos del mismo grupo salen
+                como un solo resultado.
         """
         self._indice = indice
         self._vectores = vectores
         self._catalogo = catalogo
+        self._variantes = variantes or {}
 
     def buscar(self, consulta: str, cantidad: int = 10, modo: str = "hibrido") -> list[ResultadoBusqueda]:
         """Busca documentos.
@@ -112,7 +122,32 @@ class Buscador:
                 self._catalogo[huella], puntuacion, pasaje, tuple(p for _, p in lista)
             ))
         resultados.sort(key=lambda r: (-r.puntuacion, r.info.huella))
-        return resultados[:cantidad]
+        return self._agrupar(resultados)[:cantidad]
+
+    def _agrupar(self, resultados: list[ResultadoBusqueda]) -> list[ResultadoBusqueda]:
+        """Junta las variantes de un mismo documento bajo la mejor de ellas.
+
+        Si alguna variante tiene datos personales, el resultado entero se
+        trata como personal: el contenido es casi el mismo, y enviarlo a la
+        API por la versión «limpia» anularía la protección.
+        """
+        agrupados: list[ResultadoBusqueda] = []
+        posicion: dict[str, int] = {}
+        for resultado in resultados:
+            clave = self._variantes.get(resultado.info.huella)
+            if clave is None or clave not in posicion:
+                if clave is not None:
+                    posicion[clave] = len(agrupados)
+                agrupados.append(resultado)
+                continue
+            principal = agrupados[posicion[clave]]
+            info = principal.info
+            if resultado.info.personal and not info.personal:
+                info = replace(info, personal=True)
+            agrupados[posicion[clave]] = replace(
+                principal, info=info, variantes=principal.variantes + (resultado.info,)
+            )
+        return agrupados
 
     def texto_pieza(self, pieza: int) -> tuple[str, str]:
         """Tipo y texto de una pieza (para componer respuestas)."""

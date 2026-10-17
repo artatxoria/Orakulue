@@ -9,6 +9,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+from orakulue.aplicacion.agrupador_variantes import AgrupadorVariantes
 from orakulue.aplicacion.aviso_saldo import AvisoSaldo
 from orakulue.aplicacion.buscador import Buscador
 from orakulue.aplicacion.catalogo_documentos import CatalogoDocumentos
@@ -76,7 +77,7 @@ class OrdenesBusqueda:
         """Muestra los documentos que mejor responden a una consulta."""
         try:
             with AlmacenIndice(self._base) as indice:
-                resultados = Buscador(indice, self._vectores, self._catalogo()).buscar(consulta, cantidad, modo)
+                resultados = Buscador(indice, self._vectores, *self._catalogo()).buscar(consulta, cantidad, modo)
         except ErrorVectores as error:
             print(f"Error: {error}", file=sys.stderr)
             return 1
@@ -91,6 +92,8 @@ class OrdenesBusqueda:
             print(f"   {Formato.ruta(info.rutas[0], Path.home())}")
             if info.ruta_ficha:
                 print(f"   ficha: {Formato.ruta(info.ruta_ficha, Path.home())}")
+            for variante in r.variantes:
+                print(f"   otra versión: {Formato.ruta(variante.rutas[0], Path.home())}")
             print(f"   «{pasaje}…»")
         return 0
 
@@ -99,7 +102,7 @@ class OrdenesBusqueda:
         fichas = self._configuracion.fichas
         try:
             with AlmacenIndice(self._base) as indice:
-                respondedor = Respondedor(Buscador(indice, self._vectores, self._catalogo()))
+                respondedor = Respondedor(Buscador(indice, self._vectores, *self._catalogo()))
                 if local:
                     respuesta = respondedor.responder(pregunta, local=ClienteLocal())
                 else:
@@ -138,7 +141,7 @@ class OrdenesBusqueda:
         evaluador = EvaluadorBusqueda()
         try:
             with AlmacenIndice(self._base) as indice:
-                buscador = Buscador(indice, self._vectores, self._catalogo())
+                buscador = Buscador(indice, self._vectores, *self._catalogo())
                 resultados = [evaluador.evaluar(buscador, preguntas, m) for m in Buscador.MODOS]
         except ErrorVectores as error:
             print(f"Error: {error}", file=sys.stderr)
@@ -158,12 +161,17 @@ class OrdenesBusqueda:
         return 0
 
     def _catalogo(self):
-        """Información de presentación de cada documento."""
+        """Información de presentación de cada documento y sus grupos de variantes.
+
+        Returns:
+            (catálogo por huella, clave de variantes por huella).
+        """
         with AlmacenInventario(self._base) as inventario:
             documentos = list(inventario.documentos())
         with AlmacenFichas(self._base) as fichas:
             todas = fichas.todas()
             huellas = {ruta: h for h, (_, _, ruta) in fichas.con_datos().items()}
         with AlmacenAnalisis(self._base) as analisis:
-            marcas = analisis.marcas()
-        return CatalogoDocumentos().construir(documentos, todas, huellas, marcas)
+            marcas, grupos = analisis.marcas(), analisis.grupos()
+        catalogo = CatalogoDocumentos().construir(documentos, todas, huellas, marcas)
+        return catalogo, AgrupadorVariantes().agrupar(catalogo, grupos)
