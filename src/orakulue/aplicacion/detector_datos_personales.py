@@ -27,6 +27,30 @@ _ROTULOS = re.compile(
     r"calificaci[oó]n final|izen-abizenak|jaiotze-data",
     re.IGNORECASE,
 )
+# Nombres de pila frecuentes en castellano y en euskera. Un nombre de pila
+# seguido de un apellido («Ane Etxeberria», «JUAN PÉREZ») es casi siempre una
+# persona; la lista corta evita contar «Power Query» o «Inteligencia Artificial».
+_NOMBRES_DE_PILA = (
+    "Juan José Antonio Manuel Francisco Javier David Daniel Carlos Jesús Alejandro Miguel Rafael Pedro "
+    "Pablo Ángel Sergio Fernando Jorge Luis Alberto Álvaro Adrián Diego Raúl Iván Rubén Óscar Andrés "
+    "Enrique Ramón Víctor Mario Roberto Hugo Marcos Héctor Alfonso Jaime Ignacio Gonzalo Eduardo "
+    "Santiago Alfredo Ricardo Joaquín Emilio Asier Iker Jon Mikel Unai Aitor Gorka Ander Xabier Eneko "
+    "Ibai Jokin Urko Julen Oier Imanol Iñaki Koldo Josu Aritz Beñat Markel Gaizka Ekaitz Hodei Eder "
+    "Igor Endika Ion Joseba Kepa Patxi Txema Iñigo Haritz Andoni Aimar Mattin "
+    "María Carmen Ana Isabel Laura Lucía Marta Cristina Paula Elena Sara Raquel Pilar Rosa Teresa "
+    "Silvia Patricia Beatriz Andrea Irene Julia Alba Sandra Mónica Nuria Eva Sonia Rocío Natalia "
+    "Claudia Inés Lorena Verónica Esther Alicia Yolanda Susana Lourdes Montserrat Rebeca Ángela "
+    "Noelia Miriam Vanesa Marina Carla Begoña Nerea Ainhoa Amaia Leire Ane Maialen Itziar Idoia Miren "
+    "Arantza Edurne Garazi Uxue Irati June Naroa Olatz Izaskun Iratxe Maider Estibaliz Nekane Ainara "
+    "Aitziber Elixabete Eider Haizea Oihane Jone Libe Lide Nahia Saioa Zuriñe Maite Arrate Agurne"
+).split()
+_APELLIDO = r"[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+|[A-ZÁÉÍÓÚÑ]{2,}"
+_PERSONA = re.compile(
+    r"\b(?:" + "|".join(sorted({n for n in _NOMBRES_DE_PILA} | {n.upper() for n in _NOMBRES_DE_PILA},
+                                key=len, reverse=True))
+    + r")(?:\s+(?:" + _APELLIDO + r")){1,3}\b"
+)
+
 # Dominios que aparecen en los ejemplos de los manuales y no son de nadie.
 _DOMINIOS_DE_EJEMPLO = ("example.", "ejemplo.", "dominio.", "empresa.", "test.", "correo.", "midominio.")
 
@@ -42,6 +66,8 @@ class DetectorDatosPersonales:
     CARACTERES_POR_CONTACTO = 2_000
     #: Un texto más corto que esto con tres contactos ya es sospechoso.
     TEXTO_CORTO = 20_000
+    #: Caracteres por nombre de persona por debajo de los cuales hay «muchos».
+    CARACTERES_POR_PERSONA = 3_000
 
     def analizar(self, huella: str, texto: str) -> MarcaDatosPersonales:
         """Analiza un texto.
@@ -60,20 +86,26 @@ class DetectorDatosPersonales:
         })
         telefonos = len({"".join(m) for m in _TELEFONO.findall(texto)})
         rotulos = len(_ROTULOS.findall(texto))
+        personas = len({m.group(0).lower() for m in _PERSONA.finditer(texto)})
 
         contactos = correos + telefonos
         densos = contactos >= 3 and (
             len(texto) < self.TEXTO_CORTO or len(texto) / contactos < self.CARACTERES_POR_CONTACTO
         )
+        # Lo mismo con los nombres: una lista de alumnos tiene muchos en poco
+        # texto; un libro que cita a sus autores, pocos en mucho texto.
+        muchas_personas = personas >= 5 and (
+            len(texto) < self.TEXTO_CORTO or len(texto) / personas < self.CARACTERES_POR_PERSONA
+        )
         if identificadores:
             nivel = NivelRiesgo.ALTO
-        elif densos or (rotulos >= 2 and contactos >= 1):
+        elif densos or muchas_personas or (rotulos >= 2 and contactos >= 1) or (rotulos >= 1 and personas >= 3):
             nivel = NivelRiesgo.MEDIO
         elif correos or telefonos or rotulos:
             nivel = NivelRiesgo.BAJO
         else:
             nivel = NivelRiesgo.NINGUNO
-        return MarcaDatosPersonales(huella, nivel, identificadores, correos, telefonos, rotulos)
+        return MarcaDatosPersonales(huella, nivel, identificadores, correos, telefonos, rotulos, personas)
 
     @staticmethod
     def _dnis(texto: str) -> set[str]:

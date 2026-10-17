@@ -167,7 +167,7 @@ class InformeTexto:
         )
         filas = "\n".join(
             f"| {m.nivel.value} | `{self._ruta(m.huella)}` | {m.identificadores} | {m.correos} | "
-            f"{m.telefonos} | {m.rotulos} |"
+            f"{m.telefonos} | {m.rotulos} | {m.personas} |"
             for m in excluidas
         )
         return (
@@ -175,11 +175,11 @@ class InformeTexto:
             "Indicios en el texto, **sin mostrar ningún valor**. Los niveles medio y alto quedan "
             "excluidos de la fase 4 (no se enviarán a ningún servicio externo) hasta que se revisen.\n\n"
             "| Nivel | Documentos |\n|---|---:|\n" + resumen + "\n\n"
-            "Criterio: **alto**, algún DNI, NIE o IBAN con dígito de control válido; **medio**, tres o "
-            "más correos o teléfonos distintos, o un formulario personal rellenado; **bajo**, algún "
-            "indicio suelto.\n\n"
-            "| Nivel | Documento | DNI/NIE/IBAN | Correos | Teléfonos | Rótulos |\n"
-            "|---|---|---:|---:|---:|---:|\n" + filas
+            "Criterio: **alto**, algún DNI, NIE o IBAN con dígito de control válido; **medio**, correos, "
+            "teléfonos o nombres de persona concentrados en el texto, o un formulario personal "
+            "rellenado; **bajo**, algún indicio suelto.\n\n"
+            "| Nivel | Documento | DNI/NIE/IBAN | Correos | Teléfonos | Rótulos | Personas |\n"
+            "|---|---|---:|---:|---:|---:|---:|\n" + filas
         )
 
     def _errores(self) -> str:

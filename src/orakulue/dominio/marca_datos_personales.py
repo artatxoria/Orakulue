@@ -16,8 +16,8 @@ class NivelRiesgo(Enum):
     """Algún indicio suelto: un correo, un teléfono o un rótulo de formulario.
     Normal en material de formación; no se excluye."""
     MEDIO = "medio"
-    """Varios correos o teléfonos, o un formulario rellenado. Se excluye de
-    la fase 4 salvo revisión."""
+    """Varios correos, teléfonos o nombres de persona concentrados, o un
+    formulario rellenado. Se excluye de la fase 4 salvo revisión."""
     ALTO = "alto"
     """Un DNI, NIE o IBAN con dígito de control válido. Se excluye de la
     fase 4 salvo revisión."""
@@ -34,6 +34,7 @@ class MarcaDatosPersonales:
         correos: direcciones de correo distintas (sin las de ejemplo).
         telefonos: teléfonos españoles distintos.
         rotulos: rótulos de formulario personal («nombre y apellidos»…).
+        personas: nombres de persona distintos («Nombre Apellido»).
     """
 
     huella: str
@@ -42,6 +43,7 @@ class MarcaDatosPersonales:
     correos: int
     telefonos: int
     rotulos: int
+    personas: int = 0
 
     @property
     def excluir_de_fichas(self) -> bool:

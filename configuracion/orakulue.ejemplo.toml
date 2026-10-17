@@ -101,6 +101,23 @@ correspondencias = [
 # al directorio personal.
 destino_por_defecto = "otros"
 
+[fichas]
+# Carpeta de las fichas en Markdown (se leen en Obsidian y en la tablet).
+carpeta = "~/Documentos/formakuntza/fichas"
+# Modelo que escribe las fichas del fondo. Se decide tras la prueba comparativa.
+modelo = "claude-haiku-5-5"
+# Modelos que se comparan en la prueba, con cuántos documentos.
+modelos_prueba = ["claude-haiku-5-5", "claude-sonnet-5-5", "claude-opus-5-5"]
+documentos_prueba = 20
+# Variable de entorno con la clave de Anthropic de Orakulue (propia, distinta
+# de la de otras aplicaciones, para que su gasto no falsee la estimación).
+variable_clave = "CLAVE_API_ANTHROPIC_ORAKULUE"
+# Saldo disponible en dólares, para estimar lo que queda. El proveedor no lo
+# publica: lo declaras tú y lo actualizas al recargar. Vacío = sin estimación.
+saldo_declarado_dolares = ""
+# Esfuerzo del modelo: «low» basta para fichar y gasta menos razonamiento.
+esfuerzo = "low"
+
 [rutas]
 base_datos = "datos/inventario.sqlite"
 informes = "datos/informes"

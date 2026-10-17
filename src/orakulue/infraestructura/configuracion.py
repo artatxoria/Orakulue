@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from orakulue.infraestructura.configuracion_centralizacion import ConfiguracionCentralizacion
+from orakulue.infraestructura.configuracion_fichas import ConfiguracionFichas
 
 
 class ErrorConfiguracion(Exception):
@@ -39,6 +40,7 @@ class Configuracion:
             excluida (p. ej. ``Resueltos`` dentro de una carpeta de entregas).
         centralizacion: parámetros de la fase 2, o ``None`` si el fichero no
             tiene sección ``[centralizacion]``.
+        fichas: parámetros de la fase 4 (sección ``[fichas]``).
     """
 
     raices: tuple[Path, ...]
@@ -55,6 +57,7 @@ class Configuracion:
     carpeta_informes: Path
     excepciones: tuple[Path, ...] = ()
     centralizacion: ConfiguracionCentralizacion | None = None
+    fichas: ConfiguracionFichas = ConfiguracionFichas.desde_seccion({})
 
     @classmethod
     def desde_fichero(cls, ruta_fichero: Path, raiz_proyecto: Path) -> "Configuracion":
@@ -104,7 +107,10 @@ class Configuracion:
                 carpeta_informes=cls._absoluta(rutas["informes"], raiz_proyecto),
                 excepciones=tuple(cls._absoluta(r) for r in inventario.get("excepciones", [])),
                 centralizacion=cls._centralizacion(datos.get("centralizacion"), raiz_proyecto),
+                fichas=ConfiguracionFichas.desde_seccion(datos.get("fichas", {})),
             )
+        except ValueError as error:
+            raise ErrorConfiguracion(f"{ruta_fichero}: {error}") from error
         except KeyError as error:
             raise ErrorConfiguracion(
                 f"Falta la clave {error} en {ruta_fichero}."

@@ -10,6 +10,9 @@
 - ``lotes``: lista los lotes ejecutados.
 - ``extraer``: extrae el texto de cada contenido y lo analiza (fase 3).
 - ``ocr``: reconoce el texto de los PDF escaneados y vuelve a analizar.
+- ``prueba-modelos``: compara modelos sobre una muestra (simulacro; con
+  ``--ejecutar``, de verdad).
+- ``fichar``: ficha el fondo por lotes (simulacro; con ``--ejecutar``, de verdad).
 - ``analizar``: repite el análisis de casi duplicados y datos personales.
 """
 
@@ -23,11 +26,13 @@ from orakulue.aplicacion.inventariador import Inventariador
 from orakulue.dominio.resumen_inventario import ResumenInventario
 from orakulue.infraestructura.almacen_inventario import AlmacenInventario
 from orakulue.infraestructura.calculador_huellas import CalculadorHuellas
+from orakulue.infraestructura.cargador_entorno import CargadorEntorno
 from orakulue.infraestructura.configuracion import Configuracion, ErrorConfiguracion
 from orakulue.infraestructura.explorador_disco import ExploradorDisco
 from orakulue.interfaz.exportador_csv_duplicados import ExportadorCsvDuplicados
 from orakulue.interfaz.informe_duplicados import InformeDuplicados
 from orakulue.interfaz.ordenes_centralizacion import OrdenesCentralizacion
+from orakulue.interfaz.ordenes_fichas import OrdenesFichas
 from orakulue.interfaz.ordenes_texto import OrdenesTexto
 from orakulue.utilidades.formato import Formato
 
@@ -65,6 +70,16 @@ class LineaOrdenes:
         ordenes.add_parser("extraer", help="extrae el texto de los documentos y lo analiza")
         ordenes.add_parser("ocr", help="reconoce el texto de los PDF escaneados (lento)")
         ordenes.add_parser("analizar", help="busca casi duplicados y datos personales")
+        prueba = ordenes.add_parser(
+            "prueba-modelos", help="compara modelos fichando una muestra (simulacro por defecto)"
+        )
+        prueba.add_argument("--ejecutar", action="store_true", help="llama de verdad a los modelos (gasta)")
+        fichar = ordenes.add_parser("fichar", help="ficha el fondo por lotes (simulacro por defecto)")
+        fichar.add_argument("--ejecutar", action="store_true", help="envía el lote de verdad (gasta)")
+        fichar.add_argument(
+            "--reescribir", action="store_true",
+            help="reescribe las fichas del último lote recogido, sin coste",
+        )
 
     def ejecutar(self, argumentos: list[str]) -> int:
         """Ejecuta la orden indicada.
@@ -78,6 +93,7 @@ class LineaOrdenes:
             incorrecta.
         """
         opciones = self._analizador.parse_args(argumentos)
+        CargadorEntorno().cargar(RAIZ_PROYECTO / ".env")
         try:
             configuracion = Configuracion.desde_fichero(opciones.config, RAIZ_PROYECTO)
         except ErrorConfiguracion as error:
@@ -86,6 +102,12 @@ class LineaOrdenes:
 
         if opciones.orden == "extraer":
             return OrdenesTexto(configuracion).extraer()
+        if opciones.orden == "fichar":
+            if opciones.reescribir:
+                return OrdenesFichas(configuracion).reescribir()
+            return OrdenesFichas(configuracion).fichar(opciones.ejecutar)
+        if opciones.orden == "prueba-modelos":
+            return OrdenesFichas(configuracion).prueba_modelos(opciones.ejecutar)
         if opciones.orden == "ocr":
             return OrdenesTexto(configuracion).ocr()
         if opciones.orden == "analizar":

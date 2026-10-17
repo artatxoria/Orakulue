@@ -152,3 +152,58 @@ def test_el_ocr_solo_intenta_los_pdf_sin_texto_y_una_sola_vez(tmp_path):
     assert sorted(ocr.leidos) == ["en_blanco.pdf", "escaneado.pdf"]
     assert cuenta == {EstadoExtraccion.CORRECTA: 1, EstadoExtraccion.SIN_TEXTO: 1}
     assert estados["h1"] is EstadoExtraccion.CORRECTA and estados["h2"] is EstadoExtraccion.SIN_TEXTO
+
+
+def test_una_lista_de_alumnos_con_notas_es_dato_personal_y_un_libro_que_cita_autores_no():
+    detector = DetectorDatosPersonales()
+    notas = "Notas finales\n" + "\n".join(
+        f"{n} Etxeberria Aguirre 7,5" for n in ("Ane", "Mikel", "Jon", "Leire", "Iker", "Maialen")
+    )
+    libro = PARRAFO * 3_000 + " Prólogo de Juan Pérez. Revisado por Ana García y Mikel Larrañaga."
+    marca = detector.analizar("h", notas)
+    assert marca.nivel is NivelRiesgo.MEDIO and marca.personas == 6
+    assert detector.analizar("h", libro).nivel is not NivelRiesgo.MEDIO
+
+
+def test_el_nombre_del_fichero_tambien_excluye():
+    from orakulue.aplicacion.seleccion_fichables import SeleccionFichables
+
+    seleccion = SeleccionFichables()
+    assert seleccion.sensible_por_nombre([Path("/curso/IFCT0049/Notas Finales.pdf")])
+    assert seleccion.sensible_por_nombre([Path("/curso/Control_de_asistencia/marzo.pdf")])
+    assert not seleccion.sensible_por_nombre([Path("/fondo/Excel/Funciones de texto.pdf")])
+    # «notas» dentro de otra palabra no cuenta.
+    assert not seleccion.sensible_por_nombre([Path("/fondo/Word/Anotaciones al margen.docx")])
+
+
+def test_el_aviso_de_saldo_dice_cuanto_queda_y_cuantas_ejecuciones_aguanta():
+    from decimal import Decimal
+
+    from orakulue.aplicacion.aviso_saldo import AvisoSaldo
+
+    aviso = AvisoSaldo("CLAVE_X", Decimal("10"), Decimal("9"), Decimal("0.25"), "1 de enero")
+    texto = aviso.redactar()
+    assert aviso.es_bajo and aviso.ejecuciones_restantes == 4
+    assert "SALDO BAJO" in texto and "CLAVE_X" in texto and "1,00 $" in texto
+    assert "Sin saldo" not in texto
+
+
+def test_la_falta_de_saldo_se_reconoce_por_el_texto_y_nombra_la_clave():
+    from orakulue.infraestructura.error_saldo_agotado import ErrorSaldoAgotado
+
+    assert ErrorSaldoAgotado.es_falta_de_saldo("Your credit balance is too low to access the Anthropic API.")
+    # Un 400 por petición mal formada no es falta de saldo.
+    assert not ErrorSaldoAgotado.es_falta_de_saldo("messages: field required")
+    assert "CLAVE_X" in str(ErrorSaldoAgotado("CLAVE_X", "credit balance is too low"))
+
+
+def test_el_coste_por_lotes_es_la_mitad():
+    from decimal import Decimal
+
+    from orakulue.dominio.consumo_llamada import ConsumoLlamada
+    from orakulue.infraestructura.catalogo_tarifas import CatalogoTarifas
+
+    tarifa = CatalogoTarifas().de("claude-haiku-5-5")
+    directo = tarifa.coste(ConsumoLlamada("claude-haiku-5-5", 1_000_000, 1_000_000))
+    lotes = tarifa.coste(ConsumoLlamada("claude-haiku-5-5", 1_000_000, 1_000_000, por_lotes=True))
+    assert directo == Decimal("0.60") and lotes * 2 == directo

@@ -18,7 +18,7 @@ otro nombre. Orakulue:
    documento en otro formato; marca los que tienen datos personales
    (fase 3, disponible).
 4. **Escribe una ficha** por documento con la teoría, los ejercicios
-   aprovechables y las ideas de curso (fase 4).
+   aprovechables y las ideas de curso (fase 4, disponible).
 5. **Permite consultarlo con IA** desde cualquier dispositivo a través de una
    VPN (fases 5 y 6).
 
@@ -31,7 +31,8 @@ El plan completo está en [`docs/PLAN.md`](docs/PLAN.md).
 - [uv](https://docs.astral.sh/uv/) para el entorno.
 
 Las fases 1 a 3 no tienen dependencias de Python externas: usan solo la
-biblioteca estándar. La fase 3 llama a estos programas del sistema (paquetes de
+biblioteca estándar. La fase 4 usa el SDK de Anthropic (`anthropic`), que
+instala `uv sync`. La fase 3 llama a estos programas del sistema (paquetes de
 Debian `poppler-utils`, `catdoc` y `libreoffice`):
 
 - `pdftotext`, para los PDF;
@@ -139,6 +140,35 @@ Solo lee los documentos. El texto de cada contenido distinto se guarda en
   rellenados). El informe solo da recuentos, nunca los valores. Los de nivel
   medio y alto quedan excluidos de la fase 4.
 
+### Fichas con IA (fase 4)
+
+Necesita una clave de la API de Anthropic en la variable
+`CLAVE_API_ANTHROPIC_ORAKULUE`, exportada o escrita en un fichero `.env` en la
+raíz del proyecto (excluido de git; conviene `chmod 600 .env`). En la sección
+`[fichas]` de la configuración se declara el saldo de la cuenta, que el
+proveedor no publica, para poder estimar lo que queda.
+
+```bash
+uv run orakulue prueba-modelos             # simulacro: muestra y presupuesto
+uv run orakulue prueba-modelos --ejecutar  # ficha la muestra con varios modelos
+uv run orakulue fichar                     # simulacro: fichas pendientes y coste
+uv run orakulue fichar --ejecutar          # ficha el fondo por lotes
+```
+
+- Una ficha por contenido distinto; de cada familia de plantilla, una sola.
+- Quedan fuera los documentos con datos personales (fase 3) y los que, por el
+  nombre del fichero, son notas, asistencias o listas de alumnos.
+- La respuesta del modelo es JSON con un esquema fijo; el programa la
+  convierte en Markdown con cabecera YAML, en la carpeta `carpeta` de
+  `[fichas]`. Las fichas sin interés formativo van a `_sin_interes/`, y
+  `_indice.md` las agrupa por interés y materia para Obsidian.
+- **Control de gasto**: cada llamada se anota con su coste según la tarifa.
+  Al terminar se avisa de lo gastado, del saldo estimado y de cuántas
+  ejecuciones más aguanta. El aviso nunca para nada; solo corta la falta
+  real de saldo, que se reconoce por el texto del error y nombra la clave.
+- **Reanudable**: una ficha hecha no se vuelve a pedir, y un lote enviado sin
+  recoger se recoge antes de enviar otro.
+
 Pruebas:
 
 ```bash
@@ -151,7 +181,7 @@ uv run pytest
 Orakulue/
 ├── configuracion/          ejemplo de configuración (la real no se publica)
 ├── datos/                  inventario e informes (privado, fuera de git)
-├── docs/                   plan del proyecto y artículos del blog
+├── docs/                   plan, diseño de la fase 4 y artículos del blog
 ├── src/orakulue/
 │   ├── dominio/            entidades: Documento, GrupoDuplicados…
 │   ├── infraestructura/    disco, huellas, SQLite, configuración y

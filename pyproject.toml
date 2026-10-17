@@ -4,8 +4,11 @@ version = "2.0.0a1"
 description = "Inventario, deduplicación y consulta con IA de un fondo documental para formación"
 readme = "README.md"
 requires-python = ">=3.11"
-# La fase 1 solo usa la biblioteca estándar (hashlib, sqlite3, tomllib).
-dependencies = []
+# Las fases 1 a 3 solo usan la biblioteca estándar; la 4 añade el SDK de
+# Anthropic para escribir las fichas.
+dependencies = [
+    "anthropic>=1.15.0",
+]
 
 [project.scripts]
 orakulue = "orakulue.interfaz.linea_ordenes:principal"
