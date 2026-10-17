@@ -64,6 +64,43 @@ prioridad_original = [
     "~/Documentos/formakuntza",
 ]
 
+[centralizacion]
+# Carpeta única donde acabará cada documento.
+carpeta_fondo = "~/Documentos/formakuntza/fondo"
+# Las copias sobrantes se apartan aquí en lugar de borrarse. Debe estar en el
+# mismo disco que los documentos. Relativa a la raíz del proyecto.
+carpeta_retirados = "datos/retirados"
+
+# Únicas carpetas cuyos documentos se llevan al fondo. Fuera de ellas rige el
+# modo «solo enlazar»: cada documento se queda en su sitio y solo sus copias se
+# sustituyen por enlaces. Así la documentación administrativa y de clientes no
+# se mezcla con el material de formación. Lista vacía = todo va al fondo.
+carpetas_al_fondo = [
+    "~/Documentos/formakuntza",
+    "~/Descargas",
+]
+
+# Zonas vivas: carpetas de trabajo activo. Sus documentos se inventarían pero
+# no se mueven ni se convierten en enlaces, porque un programa que regenera un
+# PDF o guarda escribiendo un fichero nuevo rompería el enlace.
+zonas_vivas = [
+    "~/Documentos/formakuntza/errekurtsoak/en_Elaboracion",
+    "~/Documentos/lana/proyectos",
+    "~/Documentos/lana/Obsidian",
+]
+
+# Organización provisional del fondo: cada carpeta de origen va a una
+# subcarpeta (vacío = raíz del fondo) y conserva su estructura interior. Gana
+# la carpeta de origen más concreta. La fase 4 la sustituirá por una temática.
+correspondencias = [
+    { origen = "~/Documentos/formakuntza/errekurtsoak", destino = "" },
+    { origen = "~/Documentos/formakuntza", destino = "" },
+    { origen = "~/Descargas", destino = "descargas" },
+]
+# Lo que no encaja en ninguna correspondencia va aquí, con su ruta relativa
+# al directorio personal.
+destino_por_defecto = "otros"
+
 [rutas]
 base_datos = "datos/inventario.sqlite"
 informes = "datos/informes"

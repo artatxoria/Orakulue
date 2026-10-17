@@ -1,10 +1,13 @@
 """Línea de órdenes de Orakulue.
 
-Órdenes disponibles en la fase 1:
+Órdenes disponibles:
 
 - ``inventariar``: recorre el disco, calcula huellas y escribe el informe.
 - ``informe``: vuelve a escribir el informe con el inventario guardado, sin
   recorrer el disco (útil tras cambiar las prioridades del original).
+- ``centralizar``: simulacro de la fase 2; con ``--ejecutar``, la aplica.
+- ``deshacer --lote N``: revierte un lote de centralización.
+- ``lotes``: lista los lotes ejecutados.
 """
 
 import argparse
@@ -21,6 +24,7 @@ from orakulue.infraestructura.configuracion import Configuracion, ErrorConfigura
 from orakulue.infraestructura.explorador_disco import ExploradorDisco
 from orakulue.interfaz.exportador_csv_duplicados import ExportadorCsvDuplicados
 from orakulue.interfaz.informe_duplicados import InformeDuplicados
+from orakulue.interfaz.ordenes_centralizacion import OrdenesCentralizacion
 from orakulue.utilidades.formato import Formato
 
 # Raíz del proyecto: tres niveles por encima de este fichero (src/orakulue/interfaz).
@@ -45,6 +49,15 @@ class LineaOrdenes:
         ordenes = self._analizador.add_subparsers(dest="orden", required=True)
         ordenes.add_parser("inventariar", help="recorre el disco y escribe el informe")
         ordenes.add_parser("informe", help="escribe el informe con el inventario guardado")
+        centralizar = ordenes.add_parser(
+            "centralizar", help="simulacro de centralización en el fondo (no toca nada)"
+        )
+        centralizar.add_argument(
+            "--ejecutar", action="store_true", help="aplica el plan de verdad"
+        )
+        deshacer = ordenes.add_parser("deshacer", help="revierte un lote de centralización")
+        deshacer.add_argument("--lote", type=int, required=True, help="número de lote")
+        ordenes.add_parser("lotes", help="lista los lotes de centralización")
 
     def ejecutar(self, argumentos: list[str]) -> int:
         """Ejecuta la orden indicada.
@@ -53,7 +66,8 @@ class LineaOrdenes:
             argumentos: argumentos sin el nombre del programa.
 
         Returns:
-            Código de salida: 0 si todo va bien, 2 si la configuración es
+            Código de salida: 0 si todo va bien, 1 si una orden de
+            centralización no ha terminado bien, 2 si la configuración es
             incorrecta.
         """
         opciones = self._analizador.parse_args(argumentos)
@@ -62,6 +76,18 @@ class LineaOrdenes:
         except ErrorConfiguracion as error:
             print(f"Error de configuración: {error}", file=sys.stderr)
             return 2
+
+        if opciones.orden in ("centralizar", "deshacer", "lotes"):
+            try:
+                centralizacion = OrdenesCentralizacion(configuracion)
+            except ValueError as error:
+                print(f"Error de configuración: {error}", file=sys.stderr)
+                return 2
+            if opciones.orden == "centralizar":
+                return centralizacion.centralizar(opciones.ejecutar)
+            if opciones.orden == "deshacer":
+                return centralizacion.deshacer(opciones.lote)
+            return centralizacion.lotes()
 
         with AlmacenInventario(configuracion.base_datos) as almacen:
             resumen = None

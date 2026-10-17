@@ -9,6 +9,8 @@ import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
+from orakulue.infraestructura.configuracion_centralizacion import ConfiguracionCentralizacion
+
 
 class ErrorConfiguracion(Exception):
     """El fichero de configuración falta o tiene un valor no válido."""
@@ -35,6 +37,8 @@ class Configuracion:
         carpeta_informes: carpeta donde se escriben los informes.
         excepciones: carpetas que se recorren aunque estén dentro de una ruta
             excluida (p. ej. ``Resueltos`` dentro de una carpeta de entregas).
+        centralizacion: parámetros de la fase 2, o ``None`` si el fichero no
+            tiene sección ``[centralizacion]``.
     """
 
     raices: tuple[Path, ...]
@@ -50,6 +54,7 @@ class Configuracion:
     base_datos: Path
     carpeta_informes: Path
     excepciones: tuple[Path, ...] = ()
+    centralizacion: ConfiguracionCentralizacion | None = None
 
     @classmethod
     def desde_fichero(cls, ruta_fichero: Path, raiz_proyecto: Path) -> "Configuracion":
@@ -98,11 +103,46 @@ class Configuracion:
                 base_datos=cls._absoluta(rutas["base_datos"], raiz_proyecto),
                 carpeta_informes=cls._absoluta(rutas["informes"], raiz_proyecto),
                 excepciones=tuple(cls._absoluta(r) for r in inventario.get("excepciones", [])),
+                centralizacion=cls._centralizacion(datos.get("centralizacion"), raiz_proyecto),
             )
         except KeyError as error:
             raise ErrorConfiguracion(
                 f"Falta la clave {error} en {ruta_fichero}."
             ) from error
+
+    @classmethod
+    def _centralizacion(
+        cls, seccion: dict | None, raiz_proyecto: Path
+    ) -> ConfiguracionCentralizacion | None:
+        """Interpreta la sección ``[centralizacion]``.
+
+        Args:
+            seccion: contenido de la sección, o ``None`` si no existe.
+            raiz_proyecto: base de las rutas relativas.
+
+        Returns:
+            La configuración de la fase 2, o ``None``.
+
+        Raises:
+            KeyError: si falta ``carpeta_fondo`` (lo convierte en
+                ``ErrorConfiguracion`` quien llama).
+        """
+        if seccion is None:
+            return None
+        return ConfiguracionCentralizacion(
+            carpeta_fondo=cls._absoluta(seccion["carpeta_fondo"]),
+            carpeta_retirados=cls._absoluta(
+                seccion.get("carpeta_retirados", "datos/retirados"), raiz_proyecto
+            ),
+            zonas_vivas=cls._expandir(seccion.get("zonas_vivas", [])),
+            correspondencias=tuple(
+                (cls._absoluta(c["origen"]), c.get("destino", "").strip("/"))
+                for c in seccion.get("correspondencias", [])
+            ),
+            destino_por_defecto=seccion.get("destino_por_defecto", "otros").strip("/"),
+            personal=Path.home(),
+            carpetas_al_fondo=tuple(cls._absoluta(r) for r in seccion.get("carpetas_al_fondo", [])),
+        )
 
     @classmethod
     def _expandir(cls, rutas: list[str]) -> tuple[Path, ...]:
