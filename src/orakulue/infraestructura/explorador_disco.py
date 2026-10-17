@@ -20,6 +20,11 @@ class ExploradorDisco:
     informe pueda decir qué se ha dejado fuera y por qué.
     """
 
+    #: Ficheros fuente de LaTeX que delatan una carpeta de proyecto o de
+    #: plantilla. No basta con ``.tex``: las plantillas de tesis guardan los
+    #: logotipos de cada universidad junto a ficheros ``.ldf`` o ``.cls``.
+    _FUENTES_LATEX = (".tex", ".cls", ".sty", ".ldf")
+
     def __init__(self, configuracion: Configuracion) -> None:
         """Prepara el explorador.
 
@@ -146,7 +151,7 @@ class ExploradorDisco:
 
     @staticmethod
     def _contiene_tex(carpeta: Path) -> bool:
-        """Indica si una carpeta tiene algún ``.tex`` directamente dentro.
+        """Indica si una carpeta tiene algún fuente LaTeX directamente dentro.
 
         Sirve para reconocer las carpetas de piezas de un proyecto LaTeX
         (``Pictures`` junto a ``main.tex``): sus PDF son portadas, cabeceras de
@@ -167,7 +172,8 @@ class ExploradorDisco:
         try:
             with os.scandir(carpeta) as entradas:
                 return any(
-                    e.name.lower().endswith(".tex") and e.is_file(follow_symlinks=False)
+                    e.name.lower().endswith(ExploradorDisco._FUENTES_LATEX)
+                    and e.is_file(follow_symlinks=False)
                     for e in entradas
                 )
         except OSError:

@@ -1,6 +1,6 @@
-"""Órdenes de la fase 3: ``extraer`` y ``analizar``.
+"""Órdenes de la fase 3: ``extraer``, ``ocr`` y ``analizar``.
 
-Las dos son de solo lectura respecto a los documentos: el texto y los
+Las tres son de solo lectura respecto a los documentos: el texto y los
 resultados se guardan en ``datos/``.
 """
 
@@ -10,6 +10,7 @@ from pathlib import Path
 from orakulue.aplicacion.detector_casi_duplicados import DetectorCasiDuplicados
 from orakulue.aplicacion.detector_datos_personales import DetectorDatosPersonales
 from orakulue.aplicacion.extraccion_textos import ExtraccionTextos
+from orakulue.aplicacion.reconocimiento_optico import ReconocimientoOptico
 from orakulue.dominio.texto_extraido import EstadoExtraccion
 from orakulue.infraestructura.almacen_analisis import AlmacenAnalisis
 from orakulue.infraestructura.almacen_inventario import AlmacenInventario
@@ -50,6 +51,25 @@ class OrdenesTexto:
             ).ejecutar(documentos)
         detalle = ", ".join(f"{Formato.cifra(n)} {e.value}" for e, n in resumen.por_estado.items())
         print(f"Extracción: {Formato.cifra(resumen.pendientes)} contenidos nuevos ({detalle or 'ninguno'}).")
+        return self.analizar()
+
+    def ocr(self) -> int:
+        """Pasa el OCR por los PDF sin texto y vuelve a analizar.
+
+        Returns:
+            Código de salida (siempre 0).
+        """
+        with AlmacenInventario(self._configuracion.base_datos) as inventario:
+            documentos = list(inventario.documentos())
+        with AlmacenTextos(self._configuracion.base_datos, self._carpeta_textos) as textos:
+            ocr = ReconocimientoOptico(
+                textos,
+                avisar_avance=lambda n, t: print(f"  … {Formato.cifra(n)} de {Formato.cifra(t)}", flush=True),
+            )
+            print(f"OCR: {Formato.cifra(len(ocr.pendientes(documentos)))} PDF pendientes.", flush=True)
+            cuenta = ocr.ejecutar(documentos)
+        detalle = ", ".join(f"{Formato.cifra(n)} {e.value}" for e, n in cuenta.items())
+        print(f"OCR terminado: {detalle or 'nada pendiente'}.")
         return self.analizar()
 
     def analizar(self) -> int:

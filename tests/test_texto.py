@@ -8,7 +8,7 @@ from orakulue.aplicacion.detector_datos_personales import DetectorDatosPersonale
 from orakulue.aplicacion.extraccion_textos import ExtraccionTextos
 from orakulue.dominio.documento import Documento
 from orakulue.dominio.marca_datos_personales import NivelRiesgo
-from orakulue.dominio.texto_extraido import EstadoExtraccion
+from orakulue.dominio.texto_extraido import EstadoExtraccion, TextoExtraido
 from orakulue.infraestructura.almacen_textos import AlmacenTextos
 from orakulue.infraestructura.extractores.extractor_zip_xml import ExtractorZipXml
 from orakulue.interfaz.informe_texto import InformeTexto
@@ -118,3 +118,37 @@ def test_el_informe_nunca_muestra_los_datos_encontrados():
 def test_los_correos_de_contacto_de_un_libro_largo_no_son_datos_personales():
     libro = PARRAFO * 2_000 + " autor@gmail.com editorial@anaya.es soporte@oreilly.com"
     assert DetectorDatosPersonales().analizar("h", libro).nivel is NivelRiesgo.BAJO
+
+
+def test_el_ocr_solo_intenta_los_pdf_sin_texto_y_una_sola_vez(tmp_path):
+    from orakulue.aplicacion.reconocimiento_optico import ReconocimientoOptico
+    from orakulue.infraestructura.extractores.extractor_ocr import ExtractorOcr
+
+    class OcrDeMentira(ExtractorOcr):
+        """Devuelve texto para un PDF y nada para el otro, sin llamar a Tesseract."""
+
+        def __init__(self):
+            self.leidos = []
+
+        def extraer(self, ruta):
+            self.leidos.append(ruta.name)
+            return PARRAFO * 3 if ruta.name == "escaneado.pdf" else ""
+
+    with AlmacenTextos(tmp_path / "bd.sqlite", tmp_path / "textos") as almacen:
+        for huella in ("h1", "h2", "h3"):
+            estado = EstadoExtraccion.CORRECTA if huella == "h3" else EstadoExtraccion.SIN_TEXTO
+            almacen.guardar(TextoExtraido(huella, estado, "", "ExtractorPdf"))
+        documentos = [
+            Documento(tmp_path / "escaneado.pdf", 1, 0, "h1"),
+            Documento(tmp_path / "en_blanco.pdf", 1, 0, "h2"),
+            Documento(tmp_path / "con_texto.pdf", 1, 0, "h3"),
+        ]
+        ocr = OcrDeMentira()
+        cuenta = ReconocimientoOptico(almacen, extractor=ocr).ejecutar(documentos)
+        estados = {h: e for h, e, *_ in almacen.metadatos()}
+        # Segunda pasada: lo que el OCR ya intentó no se repite.
+        ReconocimientoOptico(almacen, extractor=ocr).ejecutar(documentos)
+
+    assert sorted(ocr.leidos) == ["en_blanco.pdf", "escaneado.pdf"]
+    assert cuenta == {EstadoExtraccion.CORRECTA: 1, EstadoExtraccion.SIN_TEXTO: 1}
+    assert estados["h1"] is EstadoExtraccion.CORRECTA and estados["h2"] is EstadoExtraccion.SIN_TEXTO

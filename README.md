@@ -36,7 +36,9 @@ Debian `poppler-utils`, `catdoc` y `libreoffice`):
 
 - `pdftotext`, para los PDF;
 - `catdoc`, `xls2csv` y `catppt`, para los `.doc`, `.xls` y `.ppt` antiguos;
-- `soffice`, solo para los RTF.
+- `soffice`, solo para los RTF;
+- `tesseract` (paquetes `tesseract-ocr`, `tesseract-ocr-spa` y
+  `tesseract-ocr-eus`) y `pdftoppm`, para el OCR de los PDF escaneados.
 
 Los formatos modernos (`.docx`, `.xlsx`, `.pptx`, `.odt`, `.ods`, `.odp`,
 `.epub`) se leen directamente, sin programas externos.
@@ -117,6 +119,7 @@ uv run orakulue deshacer --lote 1        # devuelve el disco a como estaba
 
 ```bash
 uv run orakulue extraer      # extrae el texto de lo nuevo y analiza
+uv run orakulue ocr          # reconoce los PDF escaneados (lento) y analiza
 uv run orakulue analizar     # repite solo el análisis
 ```
 
@@ -124,8 +127,10 @@ Solo lee los documentos. El texto de cada contenido distinto se guarda en
 `datos/textos/` (una vez por huella, aunque haya varias copias) y el informe
 `datos/informes/texto-AAAAMMDD-HHMM.md` recoge:
 
-- qué se ha podido leer, por formato, y qué no tiene capa de texto (PDF
-  escaneados, que necesitarán OCR);
+- qué se ha podido leer, por formato, y qué no tiene capa de texto. Los PDF
+  escaneados se leen con `ocr`: cada página se convierte en imagen y la lee
+  Tesseract en castellano, euskera e inglés, hasta 60 páginas por documento.
+  Cada PDF se intenta una sola vez;
 - el idioma predominante de cada texto (castellano, euskera o inglés);
 - los **casi duplicados**, separados en casi idénticos (95 % o más) y
   familias de plantilla (80–95 %);

@@ -9,6 +9,7 @@
 - ``deshacer --lote N``: revierte un lote de centralización.
 - ``lotes``: lista los lotes ejecutados.
 - ``extraer``: extrae el texto de cada contenido y lo analiza (fase 3).
+- ``ocr``: reconoce el texto de los PDF escaneados y vuelve a analizar.
 - ``analizar``: repite el análisis de casi duplicados y datos personales.
 """
 
@@ -62,6 +63,7 @@ class LineaOrdenes:
         deshacer.add_argument("--lote", type=int, required=True, help="número de lote")
         ordenes.add_parser("lotes", help="lista los lotes de centralización")
         ordenes.add_parser("extraer", help="extrae el texto de los documentos y lo analiza")
+        ordenes.add_parser("ocr", help="reconoce el texto de los PDF escaneados (lento)")
         ordenes.add_parser("analizar", help="busca casi duplicados y datos personales")
 
     def ejecutar(self, argumentos: list[str]) -> int:
@@ -84,6 +86,8 @@ class LineaOrdenes:
 
         if opciones.orden == "extraer":
             return OrdenesTexto(configuracion).extraer()
+        if opciones.orden == "ocr":
+            return OrdenesTexto(configuracion).ocr()
         if opciones.orden == "analizar":
             return OrdenesTexto(configuracion).analizar()
         if opciones.orden in ("centralizar", "deshacer", "lotes"):
