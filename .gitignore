@@ -1,0 +1,17 @@
+# --- Datos privados: NUNCA al repositorio público ---------------------------
+# El inventario y los informes contienen rutas que revelan nombres de clientes.
+datos/
+# La configuración real describe el disco del autor; se publica solo el ejemplo.
+configuracion/orakulue.toml
+# Claves de API (fases posteriores).
+.env
+*.env
+
+# --- Entorno de Python -------------------------------------------------------
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+build/
+dist/

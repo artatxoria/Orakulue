@@ -1,0 +1,69 @@
+# Configuración de ejemplo de Orakulue.
+#
+# Copia este fichero a `configuracion/orakulue.toml` y ajústalo a tu disco.
+# Las rutas admiten `~` para el directorio personal. Las rutas relativas de la
+# sección [rutas] se resuelven desde la raíz del proyecto.
+
+[inventario]
+# Dónde empezar a buscar documentos.
+raices = ["~"]
+
+# Extensiones (sin punto, en minúsculas) que se consideran documentación.
+extensiones = [
+    "pdf", "epub",
+    "doc", "docx", "odt", "rtf",
+    "ppt", "pptx", "odp",
+    "xls", "xlsx", "ods",
+]
+
+# Ficheros más pequeños que esto (en bytes) no se inventarían: un fichero
+# vacío "duplica" a todos los demás vacíos y no aporta nada.
+tamano_minimo = 1
+
+# Carpetas que se saltan por su nombre, estén donde estén.
+nombres_excluidos = [
+    "node_modules", "__pycache__", "site-packages", ".venv", "venv",
+]
+
+# Árboles completos que se saltan. Admiten comodines: "~/cursos/*/entregas".
+rutas_excluidas = [
+    "~/anaconda3",
+    "~/snap",
+    "~/Plantillas",
+    "~/VirtualBox VMs",
+    # Carpetas compartidas con máquinas virtuales: dentro de la máquina no se
+    # pueden seguir enlaces que apunten fuera de la carpeta compartida.
+    "~/Documentos/maquinas virtuales",
+    "~/Documentos/etxea",
+    "~/Documentos/lana/Facturación",
+    "~/Documentos/lana/proyectos/Orakulue",
+]
+
+# Carpetas que se recorren aunque estén dentro de una ruta excluida, por
+# ejemplo las soluciones dentro de una carpeta de entregas de alumnos.
+excepciones = []
+
+# Carpetas ocultas (.cache, .local, papelera…).
+excluir_ocultas = true
+# Repositorios git: sus ficheros los gestiona git y no deben sustituirse por enlaces.
+excluir_repositorios_git = true
+# Carpetas de Syncthing (llevan un `.stfolder`): la tablet no entiende enlaces.
+excluir_carpetas_syncthing = true
+# Piezas de compilación de proyectos LaTeX: estas carpetas se saltan cuando
+# están junto a un .tex. Sus PDF (portadas, cabeceras de capítulo, figuras) se
+# repiten a propósito en cada curso y no son material de consulta. El resto del
+# proyecto, incluido el PDF del curso, sí se inventaría. Lista vacía = desactivado.
+carpetas_piezas_latex = ["Pictures", "bibtex", "images", "imagenes", "img", "figures", "figuras"]
+
+[duplicados]
+# Cuando un documento tiene copias, ¿cuál se propone como original?
+# Gana la primera ruta de esta lista que contenga a alguna copia.
+prioridad_original = [
+    "~/Documentos/formakuntza/fondo",
+    "~/Documentos/formakuntza/errekurtsoak",
+    "~/Documentos/formakuntza",
+]
+
+[rutas]
+base_datos = "datos/inventario.sqlite"
+informes = "datos/informes"

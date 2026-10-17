@@ -1,0 +1,25 @@
+[project]
+name = "orakulue"
+version = "2.0.0a1"
+description = "Inventario, deduplicación y consulta con IA de un fondo documental para formación"
+readme = "README.md"
+requires-python = ">=3.11"
+# La fase 1 solo usa la biblioteca estándar (hashlib, sqlite3, tomllib).
+dependencies = []
+
+[project.scripts]
+orakulue = "orakulue.interfaz.linea_ordenes:principal"
+
+[dependency-groups]
+dev = ["pytest"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/orakulue"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
