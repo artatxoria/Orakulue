@@ -15,7 +15,8 @@ otro nombre. Orakulue:
 2. **Lo centraliza** en una única carpeta, dejando enlaces simbólicos donde
    estaban las copias (fase 2, disponible).
 3. **Extrae el texto** y detecta casi duplicados: versiones, el mismo
-   documento en otro formato (fase 3).
+   documento en otro formato; marca los que tienen datos personales
+   (fase 3, disponible).
 4. **Escribe una ficha** por documento con la teoría, los ejercicios
    aprovechables y las ideas de curso (fase 4).
 5. **Permite consultarlo con IA** desde cualquier dispositivo a través de una
@@ -29,7 +30,16 @@ El plan completo está en [`docs/PLAN.md`](docs/PLAN.md).
 - Python 3.11 o posterior.
 - [uv](https://docs.astral.sh/uv/) para el entorno.
 
-Las fases 1 y 2 no tienen dependencias externas: usan solo la biblioteca estándar.
+Las fases 1 a 3 no tienen dependencias de Python externas: usan solo la
+biblioteca estándar. La fase 3 llama a estos programas del sistema (paquetes de
+Debian `poppler-utils`, `catdoc` y `libreoffice`):
+
+- `pdftotext`, para los PDF;
+- `catdoc`, `xls2csv` y `catppt`, para los `.doc`, `.xls` y `.ppt` antiguos;
+- `soffice`, solo para los RTF.
+
+Los formatos modernos (`.docx`, `.xlsx`, `.pptx`, `.odt`, `.ods`, `.odp`,
+`.epub`) se leen directamente, sin programas externos.
 
 ## Instalación
 
@@ -103,6 +113,27 @@ uv run orakulue lotes                    # lotes y estado de sus operaciones
 uv run orakulue deshacer --lote 1        # devuelve el disco a como estaba
 ```
 
+### Texto, casi duplicados y datos personales (fase 3)
+
+```bash
+uv run orakulue extraer      # extrae el texto de lo nuevo y analiza
+uv run orakulue analizar     # repite solo el análisis
+```
+
+Solo lee los documentos. El texto de cada contenido distinto se guarda en
+`datos/textos/` (una vez por huella, aunque haya varias copias) y el informe
+`datos/informes/texto-AAAAMMDD-HHMM.md` recoge:
+
+- qué se ha podido leer, por formato, y qué no tiene capa de texto (PDF
+  escaneados, que necesitarán OCR);
+- el idioma predominante de cada texto (castellano, euskera o inglés);
+- los **casi duplicados**, separados en casi idénticos (95 % o más) y
+  familias de plantilla (80–95 %);
+- los documentos con **indicios de datos personales** (DNI, NIE o IBAN con
+  dígito de control válido; correos o teléfonos densos; formularios
+  rellenados). El informe solo da recuentos, nunca los valores. Los de nivel
+  medio y alto quedan excluidos de la fase 4.
+
 Pruebas:
 
 ```bash
@@ -118,7 +149,8 @@ Orakulue/
 ├── docs/                   plan del proyecto y artículos del blog
 ├── src/orakulue/
 │   ├── dominio/            entidades: Documento, GrupoDuplicados…
-│   ├── infraestructura/    disco, huellas, SQLite, configuración
+│   ├── infraestructura/    disco, huellas, SQLite, configuración y
+│   │                       extractores de texto
 │   ├── aplicacion/         casos de uso: inventariar, detectar duplicados,
 │   │                       planificar, ejecutar y deshacer la centralización
 │   ├── interfaz/           línea de órdenes e informes Markdown y CSV

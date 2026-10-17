@@ -8,6 +8,8 @@
 - ``centralizar``: simulacro de la fase 2; con ``--ejecutar``, la aplica.
 - ``deshacer --lote N``: revierte un lote de centralización.
 - ``lotes``: lista los lotes ejecutados.
+- ``extraer``: extrae el texto de cada contenido y lo analiza (fase 3).
+- ``analizar``: repite el análisis de casi duplicados y datos personales.
 """
 
 import argparse
@@ -25,6 +27,7 @@ from orakulue.infraestructura.explorador_disco import ExploradorDisco
 from orakulue.interfaz.exportador_csv_duplicados import ExportadorCsvDuplicados
 from orakulue.interfaz.informe_duplicados import InformeDuplicados
 from orakulue.interfaz.ordenes_centralizacion import OrdenesCentralizacion
+from orakulue.interfaz.ordenes_texto import OrdenesTexto
 from orakulue.utilidades.formato import Formato
 
 # Raíz del proyecto: tres niveles por encima de este fichero (src/orakulue/interfaz).
@@ -58,6 +61,8 @@ class LineaOrdenes:
         deshacer = ordenes.add_parser("deshacer", help="revierte un lote de centralización")
         deshacer.add_argument("--lote", type=int, required=True, help="número de lote")
         ordenes.add_parser("lotes", help="lista los lotes de centralización")
+        ordenes.add_parser("extraer", help="extrae el texto de los documentos y lo analiza")
+        ordenes.add_parser("analizar", help="busca casi duplicados y datos personales")
 
     def ejecutar(self, argumentos: list[str]) -> int:
         """Ejecuta la orden indicada.
@@ -77,6 +82,10 @@ class LineaOrdenes:
             print(f"Error de configuración: {error}", file=sys.stderr)
             return 2
 
+        if opciones.orden == "extraer":
+            return OrdenesTexto(configuracion).extraer()
+        if opciones.orden == "analizar":
+            return OrdenesTexto(configuracion).analizar()
         if opciones.orden in ("centralizar", "deshacer", "lotes"):
             try:
                 centralizacion = OrdenesCentralizacion(configuracion)

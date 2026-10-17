@@ -99,7 +99,9 @@ class ExploradorDisco:
             return MotivoOmision.REPOSITORIO_GIT
         if configuracion.excluir_carpetas_syncthing and (carpeta / ".stfolder").exists():
             return MotivoOmision.SYNCTHING
-        if carpeta.name in configuracion.carpetas_piezas_latex and self._contiene_tex(carpeta.parent):
+        # Sin distinguir mayúsculas: hay plantillas con «Images» y con «images».
+        piezas = {n.lower() for n in configuracion.carpetas_piezas_latex}
+        if carpeta.name.lower() in piezas and self._contiene_tex(carpeta.parent):
             return MotivoOmision.PIEZAS_LATEX
         return None
 
