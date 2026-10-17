@@ -122,6 +122,38 @@ class ClienteModelo:
                 respuesta = self._cliente.messages.create(**parametros)
         return self.interpretar(respuesta, por_lotes=False)
 
+    def redactar(self, modelo: str, instrucciones: str, mensaje: str) -> tuple[str, ConsumoLlamada]:
+        """Pide una respuesta en texto libre (para contestar preguntas).
+
+        Args:
+            modelo: identificador del modelo.
+            instrucciones: instrucciones de sistema de esta petición.
+            mensaje: mensaje del usuario.
+
+        Returns:
+            El texto y el consumo.
+
+        Raises:
+            ErrorSaldoAgotado: si la cuenta no tiene saldo.
+            ErrorLlamada: por cualquier otro fallo, o si el modelo se niega.
+        """
+        with self._traducir_errores():
+            respuesta = self._cliente.messages.create(
+                model=modelo, max_tokens=self.MAX_TOKENS, system=instrucciones,
+                messages=[{"role": "user", "content": mensaje}],
+                output_config={"effort": self._esfuerzo},
+            )
+        uso = respuesta.usage
+        consumo = ConsumoLlamada(
+            modelo=respuesta.model, entrada=uso.input_tokens or 0, salida=uso.output_tokens or 0,
+            lectura_cache=getattr(uso, "cache_read_input_tokens", 0) or 0,
+            escritura_cache=getattr(uso, "cache_creation_input_tokens", 0) or 0,
+        )
+        if respuesta.stop_reason == "refusal":
+            raise ErrorLlamada("el modelo se ha negado a responder", consumo)
+        texto = "".join(b.text for b in respuesta.content if b.type == "text")
+        return texto, consumo
+
     def crear_lote(self, modelo: str, peticiones: list[Peticion]) -> str:
         """Envía un lote de peticiones a la API por lotes (mitad de precio).
 

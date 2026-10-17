@@ -19,8 +19,9 @@ otro nombre. Orakulue:
    (fase 3, disponible).
 4. **Escribe una ficha** por documento con la teoría, los ejercicios
    aprovechables y las ideas de curso (fase 4, disponible).
-5. **Permite consultarlo con IA** desde cualquier dispositivo a través de una
-   VPN (fases 5 y 6).
+5. **Permite buscar y preguntar** al fondo, citando las fuentes (fase 5,
+   disponible), y hacerlo desde cualquier dispositivo a través de una VPN
+   (fase 6).
 
 El plan completo está en [`docs/PLAN.md`](docs/PLAN.md).
 
@@ -31,8 +32,10 @@ El plan completo está en [`docs/PLAN.md`](docs/PLAN.md).
 - [uv](https://docs.astral.sh/uv/) para el entorno.
 
 Las fases 1 a 3 no tienen dependencias de Python externas: usan solo la
-biblioteca estándar. La fase 4 usa el SDK de Anthropic (`anthropic`), que
-instala `uv sync`. La fase 3 llama a estos programas del sistema (paquetes de
+biblioteca estándar. La fase 4 usa el SDK de Anthropic (`anthropic`) y la 5,
+`numpy`; los dos los instala `uv sync`. La fase 5 necesita además
+[Ollama](https://ollama.com) con el modelo de vectores `bge-m3` (y
+`qwen2.5:7b-instruct` para las respuestas locales). La fase 3 llama a estos programas del sistema (paquetes de
 Debian `poppler-utils`, `catdoc` y `libreoffice`):
 
 - `pdftotext`, para los PDF;
@@ -168,6 +171,32 @@ uv run orakulue fichar --ejecutar          # ficha el fondo por lotes
   real de saldo, que se reconoce por el texto del error y nombra la clave.
 - **Reanudable**: una ficha hecha no se vuelve a pedir, y un lote enviado sin
   recoger se recoge antes de enviar otro.
+
+### Buscar y preguntar (fase 5)
+
+```bash
+uv run orakulue indexar                       # índice local y gratuito, incremental
+uv run orakulue buscar "tablas dinámicas para principiantes"
+uv run orakulue buscar --modo palabras "IFCT0049"
+uv run orakulue preguntar "¿cómo explico BUSCARV con mis apuntes?"
+uv run orakulue preguntar --local "…"        # sin salir del equipo
+uv run orakulue evaluar-busqueda              # mide el buscador
+```
+
+- Se indexan las fichas y el texto de cada documento en trozos de ~1.500
+  caracteres. Los vectores se calculan con `bge-m3` en Ollama y se guardan en
+  la misma base SQLite, junto a un índice de palabras FTS5.
+- La búsqueda es **híbrida**: por palabras (términos exactos, códigos) y por
+  significado (sinónimos, preguntas en lenguaje natural, entre idiomas),
+  combinadas con fusión por rango recíproco. Es local y gratuita.
+- `preguntar` envía los mejores pasajes a Haiku 5.5 con la orden de usar solo
+  eso y citar cada afirmación. Los documentos con datos personales salen en la
+  búsqueda marcados, pero sus pasajes **nunca** se envían a la API; con
+  `--local` se usan, porque no salen del equipo. El gasto se anota como en la
+  fase 4.
+- `evaluar-busqueda` pasa un juego de preguntas con sus documentos esperados
+  (`datos/evaluacion/preguntas.toml`, privado) y mide el acierto en los diez
+  primeros de cada modo de búsqueda.
 
 Pruebas:
 

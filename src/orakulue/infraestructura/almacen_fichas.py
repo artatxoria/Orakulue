@@ -93,6 +93,19 @@ class AlmacenFichas:
             )
         ]
 
+    def con_datos(self) -> dict[str, tuple[dict, str, Path]]:
+        """Fichas con su respuesta guardada: huella → (datos, momento, ruta).
+
+        Las fichas antiguas sin respuesta guardada no aparecen (habría que
+        rellenarlas con ``fichar --reescribir``).
+        """
+        return {
+            huella: (json.loads(datos), momento, Path(ruta))
+            for huella, datos, momento, ruta in self._conexion.execute(
+                "SELECT huella, datos, momento, ruta FROM fichas WHERE datos IS NOT NULL"
+            )
+        }
+
     def registrar_lote(self, identificador: str, modelo: str, peticiones: int) -> None:
         """Anota un lote recién enviado, antes de esperar sus resultados.
 

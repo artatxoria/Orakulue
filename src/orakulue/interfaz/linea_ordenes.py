@@ -13,6 +13,10 @@
 - ``prueba-modelos``: compara modelos sobre una muestra (simulacro; con
   ``--ejecutar``, de verdad).
 - ``fichar``: ficha el fondo por lotes (simulacro; con ``--ejecutar``, de verdad).
+- ``indexar``: crea o actualiza el índice del buscador (local).
+- ``buscar``: busca en el fondo (local).
+- ``preguntar``: responde citando las fuentes (API; ``--local`` sin salir del PC).
+- ``evaluar-busqueda``: mide el buscador con el juego de preguntas de prueba.
 - ``analizar``: repite el análisis de casi duplicados y datos personales.
 """
 
@@ -31,6 +35,7 @@ from orakulue.infraestructura.configuracion import Configuracion, ErrorConfigura
 from orakulue.infraestructura.explorador_disco import ExploradorDisco
 from orakulue.interfaz.exportador_csv_duplicados import ExportadorCsvDuplicados
 from orakulue.interfaz.informe_duplicados import InformeDuplicados
+from orakulue.interfaz.ordenes_busqueda import OrdenesBusqueda
 from orakulue.interfaz.ordenes_centralizacion import OrdenesCentralizacion
 from orakulue.interfaz.ordenes_fichas import OrdenesFichas
 from orakulue.interfaz.ordenes_texto import OrdenesTexto
@@ -74,6 +79,19 @@ class LineaOrdenes:
             "prueba-modelos", help="compara modelos fichando una muestra (simulacro por defecto)"
         )
         prueba.add_argument("--ejecutar", action="store_true", help="llama de verdad a los modelos (gasta)")
+        ordenes.add_parser("indexar", help="crea o actualiza el índice del buscador (local)")
+        buscar = ordenes.add_parser("buscar", help="busca en el fondo (local, gratis)")
+        buscar.add_argument("consulta", help="lo que se busca, en lenguaje natural")
+        buscar.add_argument("-n", "--cantidad", type=int, default=10, help="documentos que se muestran")
+        buscar.add_argument("--modo", choices=("hibrido", "palabras", "significado"), default="hibrido")
+        preguntar = ordenes.add_parser("preguntar", help="responde citando las fuentes")
+        preguntar.add_argument("pregunta", help="la pregunta")
+        preguntar.add_argument("--local", action="store_true", help="redacta con el modelo local, sin salir del PC")
+        evaluar = ordenes.add_parser("evaluar-busqueda", help="mide el buscador con el juego de preguntas")
+        evaluar.add_argument(
+            "--preguntas", type=Path, default=RAIZ_PROYECTO / "datos" / "evaluacion" / "preguntas.toml",
+            help="juego de preguntas (por defecto datos/evaluacion/preguntas.toml)",
+        )
         fichar = ordenes.add_parser("fichar", help="ficha el fondo por lotes (simulacro por defecto)")
         fichar.add_argument("--ejecutar", action="store_true", help="envía el lote de verdad (gasta)")
         fichar.add_argument(
@@ -102,6 +120,15 @@ class LineaOrdenes:
 
         if opciones.orden == "extraer":
             return OrdenesTexto(configuracion).extraer()
+        if opciones.orden in ("indexar", "buscar", "preguntar", "evaluar-busqueda"):
+            busqueda = OrdenesBusqueda(configuracion)
+            if opciones.orden == "indexar":
+                return busqueda.indexar()
+            if opciones.orden == "buscar":
+                return busqueda.buscar(opciones.consulta, opciones.cantidad, opciones.modo)
+            if opciones.orden == "preguntar":
+                return busqueda.preguntar(opciones.pregunta, opciones.local)
+            return busqueda.evaluar(opciones.preguntas)
         if opciones.orden == "fichar":
             if opciones.reescribir:
                 return OrdenesFichas(configuracion).reescribir()

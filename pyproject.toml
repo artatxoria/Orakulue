@@ -8,6 +8,7 @@ requires-python = ">=3.11"
 # Anthropic para escribir las fichas.
 dependencies = [
     "anthropic>=1.15.0",
+    "numpy>=2.4.6",
 ]
 
 [project.scripts]
