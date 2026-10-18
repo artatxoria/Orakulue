@@ -18,6 +18,10 @@ class ConfiguracionFichas:
         saldo_declarado: saldo en dólares que el usuario dice tener, o
             ``None`` si no lo ha declarado (el proveedor no lo publica).
         esfuerzo: nivel de esfuerzo del modelo.
+        rutas_personales: carpetas (o ficheros sueltos) cuyo contenido es
+            personal o administrativo y no se ficha nunca, se llame como se
+            llame: alquiler, contabilidad, certificaciones… Es una lista
+            propia de cada disco, por eso vive en la configuración privada.
     """
 
     carpeta: Path
@@ -27,6 +31,7 @@ class ConfiguracionFichas:
     variable_clave: str
     saldo_declarado: Decimal | None
     esfuerzo: str
+    rutas_personales: tuple[Path, ...] = ()
 
     @classmethod
     def desde_seccion(cls, seccion: dict) -> "ConfiguracionFichas":
@@ -56,4 +61,7 @@ class ConfiguracionFichas:
             variable_clave=seccion.get("variable_clave", "CLAVE_API_ANTHROPIC_ORAKULUE"),
             saldo_declarado=saldo_decimal,
             esfuerzo=seccion.get("esfuerzo", "low"),
+            rutas_personales=tuple(
+                Path(r).expanduser().absolute() for r in seccion.get("rutas_personales", [])
+            ),
         )

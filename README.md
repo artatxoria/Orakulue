@@ -161,8 +161,13 @@ uv run orakulue fichar --ejecutar          # ficha el fondo por lotes
 ```
 
 - Una ficha por contenido distinto; de cada familia de plantilla, una sola.
-- Quedan fuera los documentos con datos personales (fase 3) y los que, por el
-  nombre del fichero, son notas, asistencias o listas de alumnos.
+- Quedan fuera los documentos con datos personales (fase 3); los que, por el
+  nombre del fichero, son notas, asistencias, listas de alumnos o papeles
+  económicos y administrativos (extractos, facturas, contratos, vida
+  laboral…), y todo lo que esté dentro de `rutas_personales` de `[fichas]`.
+- Si las reglas se endurecen después de fichar,
+  `uv run orakulue retirar-fichas-personales` aparta (sin borrar) las fichas
+  que ya no deberían estar a la vista, a `datos/fichas_retiradas`.
 - La respuesta del modelo es JSON con un esquema fijo; el programa la
   convierte en Markdown con cabecera YAML, en la carpeta `carpeta` de
   `[fichas]`. Las fichas sin interés formativo van a `_sin_interes/`, y

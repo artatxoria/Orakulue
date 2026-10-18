@@ -13,6 +13,7 @@ from orakulue.aplicacion.agrupador_variantes import AgrupadorVariantes
 from orakulue.aplicacion.aviso_saldo import AvisoSaldo
 from orakulue.aplicacion.buscador import Buscador
 from orakulue.aplicacion.catalogo_documentos import CatalogoDocumentos
+from orakulue.aplicacion.seleccion_fichables import SeleccionFichables
 from orakulue.aplicacion.evaluador_busqueda import EvaluadorBusqueda
 from orakulue.aplicacion.indexador import Indexador
 from orakulue.aplicacion.preparador_peticion import INSTRUCCIONES
@@ -173,5 +174,6 @@ class OrdenesBusqueda:
             huellas = {ruta: h for h, (_, _, ruta) in fichas.con_datos().items()}
         with AlmacenAnalisis(self._base) as analisis:
             marcas, grupos = analisis.marcas(), analisis.grupos()
-        catalogo = CatalogoDocumentos().construir(documentos, todas, huellas, marcas)
+        seleccion = SeleccionFichables(rutas_personales=self._configuracion.fichas.rutas_personales)
+        catalogo = CatalogoDocumentos(seleccion).construir(documentos, todas, huellas, marcas)
         return catalogo, AgrupadorVariantes().agrupar(catalogo, grupos)

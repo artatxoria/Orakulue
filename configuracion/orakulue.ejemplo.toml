@@ -117,6 +117,12 @@ variable_clave = "CLAVE_API_ANTHROPIC_ORAKULUE"
 saldo_declarado_dolares = ""
 # Esfuerzo del modelo: «low» basta para fichar y gasta menos razonamiento.
 esfuerzo = "low"
+# Carpetas (o ficheros sueltos) personales o administrativos: no se fichan
+# nunca y su texto no sale por el conector, se llamen como se llamen.
+rutas_personales = [
+    # "~/Documentos/alquiler",
+    # "~/Documentos/contabilidad",
+]
 
 [propuestas]
 # Carpeta de las propuestas de cursos y píldoras.

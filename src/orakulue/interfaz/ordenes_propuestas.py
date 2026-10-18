@@ -18,6 +18,7 @@ from pathlib import Path
 from orakulue.aplicacion.agrupador_ideas import AgrupadorIdeas
 from orakulue.aplicacion.aviso_saldo import AvisoSaldo
 from orakulue.aplicacion.catalogo_documentos import CatalogoDocumentos
+from orakulue.aplicacion.seleccion_fichables import SeleccionFichables
 from orakulue.aplicacion.preparador_peticion import INSTRUCCIONES
 from orakulue.aplicacion.puntuador_candidatas import PuntuadorCandidatas
 from orakulue.aplicacion.recolector_ideas import RecolectorIdeas
@@ -259,7 +260,8 @@ class OrdenesPropuestas:
             fichas, todas = almacen_fichas.con_datos(), almacen_fichas.todas()
         with AlmacenAnalisis(base) as analisis:
             marcas = analisis.marcas()
-        catalogo_docs = CatalogoDocumentos().construir(lista, todas, {r: h for h, (_, _, r) in fichas.items()}, marcas)
+        seleccion = SeleccionFichables(rutas_personales=self._configuracion.fichas.rutas_personales)
+        catalogo_docs = CatalogoDocumentos(seleccion).construir(lista, todas, {r: h for h, (_, _, r) in fichas.items()}, marcas)
         return fichas, catalogo_docs, {h: (i.titulo, i.rutas[0]) for h, i in catalogo_docs.items()}
 
     def _calcular(self) -> tuple[list[Candidata], dict, dict[str, tuple[str, Path]]]:

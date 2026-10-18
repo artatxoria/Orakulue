@@ -218,3 +218,18 @@ def test_un_fichero_con_nombre_de_persona_se_trata_como_personal():
     for nombre in ("Mario", "presentacion_final", "Funciones de texto", "Tema 3 - Power Query"):
         assert not NombresDePila.en_nombre_de_fichero(nombre), nombre
     assert SeleccionFichables().sensible_por_nombre([Path("/examenes/ibañez_pamela.docx")])
+
+
+def test_los_papeles_economicos_y_las_rutas_personales_no_se_fichan(tmp_path):
+    from orakulue.aplicacion.seleccion_fichables import SeleccionFichables
+
+    seleccion = SeleccionFichables(rutas_personales=(tmp_path / "alquiler", tmp_path / "suelto.pdf"))
+    # Un extracto bancario no tiene IBAN completo ni DNI: solo lo delata el nombre.
+    for nombre in ("movimiento_BANCO.pdf", "Extracto marzo.pdf", "Contrato_alquiler_2023.pdf",
+                   "Burofax_recibido.pdf", "vida_laboral.pdf", "Faltas_2asir.xls"):
+        assert seleccion.sensible_por_nombre([tmp_path / "descargas" / nombre]), nombre
+    assert seleccion.sensible_por_nombre([tmp_path / "alquiler" / "2024" / "ARGIA.pdf"])
+    assert seleccion.sensible_por_nombre([tmp_path / "suelto.pdf"])
+    # Las palabras van completas: «rentabilidad» no es «renta».
+    for nombre in ("Rentabilidad de campañas.pdf", "Tablas dinámicas.xlsx", "suelto2.pdf"):
+        assert not seleccion.sensible_por_nombre([tmp_path / "cursos" / nombre]), nombre

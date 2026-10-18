@@ -228,7 +228,8 @@ class OrdenesFichas:
             huellas = {ruta: h for h, (_, _, ruta) in fichas.con_datos().items()}
         with AlmacenAnalisis(base) as analisis:
             marcas = analisis.marcas()
-        catalogo = CatalogoDocumentos().construir(documentos, todas, huellas, marcas)
+        seleccion = SeleccionFichables(rutas_personales=self._configuracion.fichas.rutas_personales)
+        catalogo = CatalogoDocumentos(seleccion).construir(documentos, todas, huellas, marcas)
         retirar = {h for h, info in catalogo.items() if info.personal and info.ruta_ficha is not None}
         destino = self._datos / "fichas_retiradas"
         with AlmacenFichas(base) as fichas:
@@ -249,4 +250,5 @@ class OrdenesFichas:
             metadatos = list(textos.metadatos())
         with AlmacenAnalisis(base) as analisis:
             marcas, grupos = analisis.marcas(), analisis.grupos()
-        return SeleccionFichables().seleccionar(documentos, metadatos, marcas, grupos)
+        seleccion = SeleccionFichables(rutas_personales=self._configuracion.fichas.rutas_personales)
+        return seleccion.seleccionar(documentos, metadatos, marcas, grupos)

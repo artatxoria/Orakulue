@@ -5,8 +5,10 @@ Reglas (docs/FASE4_DISENO.md):
 - todo el inventario con texto leído, esté donde esté;
 - fuera los marcados con datos personales de nivel medio o alto;
 - fuera los que, por el nombre del fichero o de su carpeta, son casi seguro
-  documentos con datos de personas (notas, asistencia, listas de alumnos),
-  aunque el texto no lo delate;
+  documentos con datos de personas (notas, asistencia, listas de alumnos,
+  extractos, facturas, contratos), aunque el texto no lo delate;
+- fuera los que están en una carpeta declarada personal en la configuración
+  (alquiler, contabilidad, certificaciones…);
 - de cada grupo de casi duplicados, una sola ficha: la del miembro con más
   texto, que lista a los demás.
 """
@@ -64,18 +66,32 @@ class SeleccionFichables:
     #: Palabras que, en el nombre de un fichero o de su carpeta, delatan datos
     #: de personas. Se comparan sin tildes ni mayúsculas. Basta que aparezca
     #: una en cualquiera de las rutas del contenido.
+    #:
+    #: La segunda mitad son papeles económicos y administrativos: un extracto
+    #: bancario no lleva IBAN completo ni DNI, y solo se reconoce por cómo se
+    #: llama («movimiento_banco.pdf»). Se prefiere dejar sin ficha algún
+    #: ejercicio llamado «factura» antes que enviar fuera una factura real.
     PALABRAS_SENSIBLES = (
         "notas finales", "calificaciones", "calificacion", "asistencia", "listado de alumnos",
-        "lista de alumnos", "alumnado", "matricula", "nomina", "curriculum", "ikasleen zerrenda",
-        "ikasle zerrenda", "kalifikazio", "asistentzia", "notak",
+        "lista de alumnos", "alumnado", "matricula", "nomina", "nominas", "curriculum",
+        "ikasleen zerrenda", "ikasle zerrenda", "kalifikazio", "asistentzia", "notak", "faltas",
+        "movimiento", "movimientos", "extracto", "extractos", "recibo", "recibos", "factura", "facturas",
+        "contrato", "contratos", "arrendamiento", "alquiler", "prorroga", "burofax", "vida laboral",
+        "contabilidad", "gastuak", "bancaria", "bancario", "bankuko", "postanet",
+        "justificante", "justificantes", "renta", "hacienda", "seguridad social", "dni", "pasaporte",
     )
 
-    def __init__(self, palabras_sensibles: tuple[str, ...] | None = None) -> None:
+    def __init__(
+        self, palabras_sensibles: tuple[str, ...] | None = None, rutas_personales: tuple[Path, ...] = ()
+    ) -> None:
         """Prepara la selección.
 
         Args:
             palabras_sensibles: lista propia de palabras (útil en pruebas).
+            rutas_personales: carpetas o ficheros que nunca se fichan
+                (``[fichas] rutas_personales`` de la configuración).
         """
+        self._rutas_personales = rutas_personales
         palabras = palabras_sensibles if palabras_sensibles is not None else self.PALABRAS_SENSIBLES
         self._sensibles = re.compile(
             r"(?<![a-z])(?:" + "|".join(re.escape(self._normalizar(p)) for p in palabras) + r")(?![a-z])"
@@ -87,9 +103,12 @@ class SeleccionFichables:
         Dos casos: una palabra sensible en el nombre del fichero o de su
         carpeta («notas finales», «asistencia»…), o un fichero que se llama
         como una persona («lopez_irene.docx»), que es como suelen llamarse
-        las entregas de alumnos aunque su texto apenas tenga nombres.
+        las entregas de alumnos aunque su texto apenas tenga nombres. Y
+        además, cualquier ruta dentro de una de las rutas personales.
         """
         for ruta in rutas:
+            if any(ruta.is_relative_to(personal) for personal in self._rutas_personales):
+                return True
             if NombresDePila.en_nombre_de_fichero(ruta.stem):
                 return True
             if self._sensibles and self._sensibles.search(

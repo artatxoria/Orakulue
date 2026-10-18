@@ -16,6 +16,16 @@ from orakulue.utilidades.clasificador_materias import ClasificadorMaterias
 class CatalogoDocumentos:
     """Construye la información de presentación de cada contenido."""
 
+    def __init__(self, seleccion: SeleccionFichables | None = None) -> None:
+        """Prepara el catálogo.
+
+        Args:
+            seleccion: reglas que deciden qué es personal; debe ser la misma
+                que se usó al fichar (con las rutas personales de la
+                configuración).
+        """
+        self._seleccion = seleccion or SeleccionFichables()
+
     def construir(
         self,
         documentos: list[Documento],
@@ -44,7 +54,7 @@ class CatalogoDocumentos:
                 rutas.setdefault(documento.huella, []).append(documento.ruta)
         por_huella = {huellas_fichas[r]: (r, titulo, tema, interes)
                       for r, titulo, _tipo, tema, interes in fichas if r in huellas_fichas}
-        materias, seleccion = ClasificadorMaterias(), SeleccionFichables()
+        materias, seleccion = ClasificadorMaterias(), self._seleccion
         catalogo = {}
         for huella, lista in rutas.items():
             lista = sorted(lista)

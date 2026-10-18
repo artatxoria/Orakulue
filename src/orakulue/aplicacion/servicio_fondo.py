@@ -21,6 +21,7 @@ from pathlib import Path
 from orakulue.aplicacion.agrupador_variantes import AgrupadorVariantes
 from orakulue.aplicacion.buscador import Buscador, ResultadoBusqueda
 from orakulue.aplicacion.catalogo_documentos import CatalogoDocumentos
+from orakulue.aplicacion.seleccion_fichables import SeleccionFichables
 from orakulue.aplicacion.preparador_peticion import INSTRUCCIONES
 from orakulue.aplicacion.respondedor import Respondedor, Respuesta
 from orakulue.dominio.info_documento import InfoDocumento
@@ -77,7 +78,8 @@ class ServicioFondo:
             huellas = {ruta: h for h, (_, _, ruta) in fichas.con_datos().items()}
         with AlmacenAnalisis(base) as analisis:
             marcas, grupos = analisis.marcas(), analisis.grupos()
-        catalogo = CatalogoDocumentos().construir(documentos, todas, huellas, marcas)
+        seleccion = SeleccionFichables(rutas_personales=self._configuracion.fichas.rutas_personales)
+        catalogo = CatalogoDocumentos(seleccion).construir(documentos, todas, huellas, marcas)
         with self._cerrojo:
             self._catalogo = catalogo
             self._buscador = Buscador(self._indice, self._vectores, catalogo,
