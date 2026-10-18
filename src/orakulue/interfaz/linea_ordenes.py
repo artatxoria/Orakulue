@@ -17,6 +17,8 @@
 - ``buscar``: busca en el fondo (local).
 - ``preguntar``: responde citando las fuentes (API; ``--local`` sin salir del PC).
 - ``evaluar-busqueda``: mide el buscador con el juego de preguntas de prueba.
+- ``servir``: arranca la web en la dirección de la VPN.
+- ``conector-mcp``: arranca el conector para Claude (lo lanza Claude, no tú).
 - ``analizar``: repite el análisis de casi duplicados y datos personales.
 """
 
@@ -92,6 +94,13 @@ class LineaOrdenes:
             "--preguntas", type=Path, default=RAIZ_PROYECTO / "datos" / "evaluacion" / "preguntas.toml",
             help="juego de preguntas (por defecto datos/evaluacion/preguntas.toml)",
         )
+        servir = ordenes.add_parser("servir", help="arranca la web (solo en la dirección de la VPN)")
+        servir.add_argument("--direccion", default="10.8.0.5", help="dirección donde escucha (la de la VPN)")
+        servir.add_argument("--puerto", type=int, default=8010)
+        ordenes.add_parser("conector-mcp", help="conector para Claude por stdio (lo arranca Claude)")
+        ordenes.add_parser(
+            "retirar-fichas-personales", help="retira (sin borrar) las fichas de documentos personales"
+        )
         fichar = ordenes.add_parser("fichar", help="ficha el fondo por lotes (simulacro por defecto)")
         fichar.add_argument("--ejecutar", action="store_true", help="envía el lote de verdad (gasta)")
         fichar.add_argument(
@@ -120,6 +129,10 @@ class LineaOrdenes:
 
         if opciones.orden == "extraer":
             return OrdenesTexto(configuracion).extraer()
+        if opciones.orden == "servir":
+            return self._servir(configuracion, opciones.direccion, opciones.puerto)
+        if opciones.orden == "conector-mcp":
+            return self._conector(configuracion)
         if opciones.orden in ("indexar", "buscar", "preguntar", "evaluar-busqueda"):
             busqueda = OrdenesBusqueda(configuracion)
             if opciones.orden == "indexar":
@@ -129,6 +142,8 @@ class LineaOrdenes:
             if opciones.orden == "preguntar":
                 return busqueda.preguntar(opciones.pregunta, opciones.local)
             return busqueda.evaluar(opciones.preguntas)
+        if opciones.orden == "retirar-fichas-personales":
+            return OrdenesFichas(configuracion).retirar_personales()
         if opciones.orden == "fichar":
             if opciones.reescribir:
                 return OrdenesFichas(configuracion).reescribir()
@@ -156,6 +171,31 @@ class LineaOrdenes:
             if opciones.orden == "inventariar":
                 resumen = self._inventariar(configuracion, almacen)
             self._escribir_informe(configuracion, almacen, resumen)
+        return 0
+
+    @staticmethod
+    def _servir(configuracion: Configuracion, direccion: str, puerto: int) -> int:
+        """Arranca la web con Uvicorn.
+
+        Por omisión escucha solo en la dirección de la VPN: desde la red de
+        casa o desde Internet no se ve.
+        """
+        import uvicorn
+
+        from orakulue.aplicacion.servicio_fondo import ServicioFondo
+        from orakulue.interfaz.web.aplicacion_web import AplicacionWeb
+
+        aplicacion = AplicacionWeb(ServicioFondo(configuracion)).construir()
+        uvicorn.run(aplicacion, host=direccion, port=puerto, log_level="warning")
+        return 0
+
+    @staticmethod
+    def _conector(configuracion: Configuracion) -> int:
+        """Arranca el conector MCP por la entrada y salida estándar."""
+        from orakulue.aplicacion.servicio_fondo import ServicioFondo
+        from orakulue.interfaz.conector_mcp import ConectorMcp
+
+        ConectorMcp(ServicioFondo(configuracion)).construir().run("stdio")
         return 0
 
     def _inventariar(

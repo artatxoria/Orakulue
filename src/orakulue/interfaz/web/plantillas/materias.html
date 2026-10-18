@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block titulo %}Materias · Orakulue{% endblock %}
+{% block contenido %}
+<p class="marcas">
+{% for materia, lista in materias.items() %}<a href="#m{{ loop.index }}">{{ materia }}</a> ({{ lista | length }}){% if not loop.last %} · {% endif %}{% endfor %}
+</p>
+{% for materia, lista in materias.items() %}
+<h2 id="m{{ loop.index }}">{{ materia }}</h2>
+<ul>
+{% for info in lista %}
+  <li><a href="/ficha/{{ info.huella }}">{{ info.titulo }}</a> <span class="marcas">· {{ info.interes }}</span></li>
+{% endfor %}
+</ul>
+{% endfor %}
+{% endblock %}

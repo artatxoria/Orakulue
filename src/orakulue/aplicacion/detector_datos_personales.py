@@ -12,6 +12,8 @@ un ejercicio de Excel casi nunca disparan la alarma.
 
 import re
 
+from orakulue.utilidades.nombres_de_pila import NombresDePila
+
 from orakulue.dominio.marca_datos_personales import MarcaDatosPersonales, NivelRiesgo
 
 _LETRAS_DNI = "TRWAGMYFPDXBNJZSQVHLCKE"
@@ -27,23 +29,7 @@ _ROTULOS = re.compile(
     r"calificaci[oó]n final|izen-abizenak|jaiotze-data",
     re.IGNORECASE,
 )
-# Nombres de pila frecuentes en castellano y en euskera. Un nombre de pila
-# seguido de un apellido («Ane Etxeberria», «JUAN PÉREZ») es casi siempre una
-# persona; la lista corta evita contar «Power Query» o «Inteligencia Artificial».
-_NOMBRES_DE_PILA = (
-    "Juan José Antonio Manuel Francisco Javier David Daniel Carlos Jesús Alejandro Miguel Rafael Pedro "
-    "Pablo Ángel Sergio Fernando Jorge Luis Alberto Álvaro Adrián Diego Raúl Iván Rubén Óscar Andrés "
-    "Enrique Ramón Víctor Mario Roberto Hugo Marcos Héctor Alfonso Jaime Ignacio Gonzalo Eduardo "
-    "Santiago Alfredo Ricardo Joaquín Emilio Asier Iker Jon Mikel Unai Aitor Gorka Ander Xabier Eneko "
-    "Ibai Jokin Urko Julen Oier Imanol Iñaki Koldo Josu Aritz Beñat Markel Gaizka Ekaitz Hodei Eder "
-    "Igor Endika Ion Joseba Kepa Patxi Txema Iñigo Haritz Andoni Aimar Mattin "
-    "María Carmen Ana Isabel Laura Lucía Marta Cristina Paula Elena Sara Raquel Pilar Rosa Teresa "
-    "Silvia Patricia Beatriz Andrea Irene Julia Alba Sandra Mónica Nuria Eva Sonia Rocío Natalia "
-    "Claudia Inés Lorena Verónica Esther Alicia Yolanda Susana Lourdes Montserrat Rebeca Ángela "
-    "Noelia Miriam Vanesa Marina Carla Begoña Nerea Ainhoa Amaia Leire Ane Maialen Itziar Idoia Miren "
-    "Arantza Edurne Garazi Uxue Irati June Naroa Olatz Izaskun Iratxe Maider Estibaliz Nekane Ainara "
-    "Aitziber Elixabete Eider Haizea Oihane Jone Libe Lide Nahia Saioa Zuriñe Maite Arrate Agurne"
-).split()
+_NOMBRES_DE_PILA = sorted(NombresDePila.TODOS)
 _APELLIDO = r"[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+|[A-ZÁÉÍÓÚÑ]{2,}"
 _PERSONA = re.compile(
     r"\b(?:" + "|".join(sorted({n for n in _NOMBRES_DE_PILA} | {n.upper() for n in _NOMBRES_DE_PILA},

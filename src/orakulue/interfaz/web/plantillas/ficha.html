@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block titulo %}{{ info.titulo }} · Orakulue{% endblock %}
+{% block contenido %}
+<div class="marcas">
+  {% if info.materia %}{{ info.materia }}{% endif %}
+  {% if info.interes %} · interés {{ info.interes }}{% endif %}
+  {% if info.personal %} · <span class="personal">datos personales</span>{% endif %}
+  · <a href="/original/{{ info.huella }}">descargar el original</a>
+</div>
+{% if html %}
+<article class="ficha">{{ html | safe }}</article>
+{% else %}
+<h1>{{ info.titulo }}</h1>
+<p>Este documento no tiene ficha{% if info.personal %} (no se fichan los que tienen datos personales){% endif %}.</p>
+{% endif %}
+<h2>Dónde está</h2>
+{% for r in info.rutas %}<div class="ruta">{{ r | ruta }}</div>{% endfor %}
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block titulo %}Preguntar · Orakulue{% endblock %}
+{% block contenido %}
+<form method="post" action="/preguntar">
+  <textarea name="pregunta" placeholder="Por ejemplo: ¿qué ejercicios tengo para practicar BUSCARV?" autofocus>{{ pregunta }}</textarea>
+  <p>
+    <label><input type="checkbox" name="local" value="si" {% if local %}checked{% endif %}>
+      Sin salir del PC (más lento y de menos calidad, pero nada se envía fuera)</label>
+  </p>
+  <button type="submit">Preguntar</button>
+</form>
+{% if resultado %}
+<article class="ficha">{{ respuesta_html | safe }}</article>
+<h2>Fuentes</h2>
+<ol>
+{% for info in resultado.respuesta.fuentes %}
+  <li><a href="/ficha/{{ info.huella }}">{{ info.titulo }}</a> <span class="ruta">{{ info.rutas[0] | ruta }}</span></li>
+{% endfor %}
+</ol>
+{% if resultado.respuesta.omitidos_por_privacidad %}
+<p class="personal">{{ resultado.respuesta.omitidos_por_privacidad }} documentos relevantes tienen datos personales y no se han
+enviado fuera. Marca «sin salir del PC» para usarlos.</p>
+{% endif %}
+<p class="marcas">Coste de la pregunta: {{ "%.4f" | format(resultado.coste) | replace(".", ",") }} $</p>
+{% endif %}
+{% endblock %}

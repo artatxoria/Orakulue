@@ -24,6 +24,20 @@ CREATE TABLE IF NOT EXISTS fichas (
     momento     TEXT NOT NULL,
     datos       TEXT
 );
+CREATE TABLE IF NOT EXISTS fichas_retiradas (
+    huella      TEXT PRIMARY KEY,
+    modelo      TEXT NOT NULL,
+    ruta        TEXT NOT NULL,      -- dónde estaba
+    retirada_a  TEXT NOT NULL,      -- dónde está ahora
+    titulo      TEXT NOT NULL,
+    tipo        TEXT NOT NULL,
+    tema        TEXT NOT NULL,
+    interes     TEXT NOT NULL,
+    momento     TEXT NOT NULL,
+    datos       TEXT,
+    motivo      TEXT NOT NULL,
+    retirada    TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS lotes_api (
     id          TEXT PRIMARY KEY,
     modelo      TEXT NOT NULL,
@@ -105,6 +119,36 @@ class AlmacenFichas:
                 "SELECT huella, datos, momento, ruta FROM fichas WHERE datos IS NOT NULL"
             )
         }
+
+    def retirar(self, huella: str, destino: Path, motivo: str) -> None:
+        """Saca una ficha del fondo de fichas sin borrarla.
+
+        Mueve el fichero a ``destino`` y pasa su registro a la tabla de
+        retiradas, con el motivo. Se puede deshacer: el fichero y los datos
+        siguen guardados.
+
+        Args:
+            huella: contenido de la ficha.
+            destino: carpeta donde se guarda la ficha retirada.
+            motivo: por qué se retira.
+        """
+        fila = self._conexion.execute(
+            "SELECT huella, modelo, ruta, titulo, tipo, tema, interes, momento, datos FROM fichas WHERE huella = ?",
+            (huella,),
+        ).fetchone()
+        if fila is None:
+            return
+        origen = Path(fila[2])
+        destino.mkdir(parents=True, exist_ok=True)
+        nuevo = destino / origen.name
+        if origen.is_file():
+            origen.rename(nuevo)
+        self._conexion.execute(
+            "INSERT OR REPLACE INTO fichas_retiradas VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (fila[0], fila[1], fila[2], str(nuevo), *fila[3:], motivo, datetime.now().isoformat(timespec="seconds")),
+        )
+        self._conexion.execute("DELETE FROM fichas WHERE huella = ?", (huella,))
+        self._conexion.commit()
 
     def registrar_lote(self, identificador: str, modelo: str, peticiones: int) -> None:
         """Anota un lote recién enviado, antes de esperar sus resultados.

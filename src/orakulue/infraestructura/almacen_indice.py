@@ -57,14 +57,17 @@ class AlmacenIndice:
         "eta edo da dira bat ez du dute ere nola zer non zein the and of to in is for on with what how".split()
     )
 
-    def __init__(self, ruta_base_datos: Path) -> None:
+    def __init__(self, ruta_base_datos: Path, entre_hilos: bool = False) -> None:
         """Abre el índice.
 
         Args:
             ruta_base_datos: fichero SQLite compartido con el inventario.
+            entre_hilos: permite usar la conexión desde varios hilos (la web
+                atiende cada petición en un hilo). Quien lo active debe
+                serializar el acceso con un cerrojo.
         """
         ruta_base_datos.parent.mkdir(parents=True, exist_ok=True)
-        self._conexion = sqlite3.connect(ruta_base_datos)
+        self._conexion = sqlite3.connect(ruta_base_datos, check_same_thread=not entre_hilos)
         self._conexion.executescript(_ESQUEMA)
         self._matriz: np.ndarray | None = None
         self._ids: np.ndarray | None = None
@@ -111,6 +114,13 @@ class AlmacenIndice:
         for huella in huellas:
             for tipo in ("ficha", "trozo"):
                 self._borrar(huella, tipo)
+        self._conexion.commit()
+        self._matriz = None
+
+    def olvidar_tipo(self, huellas: set[str], tipo: str) -> None:
+        """Quita del índice las piezas de un tipo (p. ej. solo las fichas)."""
+        for huella in huellas:
+            self._borrar(huella, tipo)
         self._conexion.commit()
         self._matriz = None
 

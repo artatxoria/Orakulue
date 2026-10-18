@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "orakulue": {
+      "command": "uv",
+      "args": ["--directory", "/ruta/a/Orakulue", "run", "--frozen", "orakulue", "conector-mcp"]
+    }
+  }
+}

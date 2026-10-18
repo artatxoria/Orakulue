@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block titulo %}{% if consulta %}{{ consulta }} · {% endif %}Orakulue{% endblock %}
+{% block contenido %}
+<form class="busqueda" method="get" action="/">
+  <input type="search" name="q" value="{{ consulta }}" placeholder="¿Qué buscas? Por ejemplo: tablas dinámicas para principiantes" autofocus>
+  <select name="modo" aria-label="Modo de búsqueda">
+    <option value="hibrido" {% if modo == "hibrido" %}selected{% endif %}>Híbrido</option>
+    <option value="palabras" {% if modo == "palabras" %}selected{% endif %}>Palabras exactas</option>
+    <option value="significado" {% if modo == "significado" %}selected{% endif %}>Significado</option>
+  </select>
+  <button type="submit">Buscar</button>
+</form>
+{% if consulta and not resultados and not error %}<p>Nada encontrado.</p>{% endif %}
+{% for r in resultados %}
+<article class="resultado">
+  <h2><a href="/ficha/{{ r.info.huella }}">{{ r.info.titulo }}</a></h2>
+  <div class="marcas">
+    {% if r.info.materia %}{{ r.info.materia }}{% endif %}
+    {% if r.info.interes %} · interés {{ r.info.interes }}{% endif %}
+    {% if r.info.personal %} · <span class="personal">datos personales</span>{% endif %}
+    · <a href="/original/{{ r.info.huella }}">original</a>
+  </div>
+  <p class="pasaje">«{{ r.pasaje | truncate(260) }}»</p>
+  <div class="ruta">{{ r.info.rutas[0] | ruta }}</div>
+  {% for v in r.variantes %}
+  <div class="ruta">otra versión: <a href="/original/{{ v.huella }}">{{ v.rutas[0] | ruta }}</a></div>
+  {% endfor %}
+</article>
+{% endfor %}
+{% endblock %}

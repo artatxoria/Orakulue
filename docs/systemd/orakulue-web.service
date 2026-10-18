@@ -1,0 +1,22 @@
+# Servicio de usuario de systemd para la web de Orakulue.
+#
+# Instalación (como usuario, sin sudo):
+#   cp docs/systemd/orakulue-web.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now orakulue-web
+#
+# Escucha solo en la dirección de la VPN (10.8.0.5:8010). Si la VPN aún no
+# está levantada al arrancar, falla y systemd lo reintenta cada 15 segundos.
+# Ajusta las rutas de uv y del proyecto si son otras.
+
+[Unit]
+Description=Orakulue: web del fondo documental (solo por la VPN)
+After=network-online.target
+
+[Service]
+ExecStart=%h/.local/bin/uv --directory %h/Documentos/lana/proyectos/Orakulue run --frozen orakulue servir
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=default.target

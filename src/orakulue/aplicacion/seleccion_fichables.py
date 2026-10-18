@@ -19,6 +19,7 @@ from pathlib import Path
 from orakulue.dominio.documento import Documento
 from orakulue.dominio.marca_datos_personales import MarcaDatosPersonales
 from orakulue.dominio.texto_extraido import EstadoExtraccion
+from orakulue.utilidades.nombres_de_pila import NombresDePila
 
 
 @dataclass(frozen=True)
@@ -81,13 +82,21 @@ class SeleccionFichables:
         ) if palabras else None
 
     def sensible_por_nombre(self, rutas: list[Path]) -> bool:
-        """Si alguna ruta tiene en su nombre o en su carpeta una palabra sensible."""
-        if self._sensibles is None:
-            return False
-        return any(
-            self._sensibles.search(self._normalizar(f"{r.parent.name} {r.stem}").replace("_", " "))
-            for r in rutas
-        )
+        """Si alguna ruta delata datos de personas por su nombre.
+
+        Dos casos: una palabra sensible en el nombre del fichero o de su
+        carpeta («notas finales», «asistencia»…), o un fichero que se llama
+        como una persona («lopez_irene.docx»), que es como suelen llamarse
+        las entregas de alumnos aunque su texto apenas tenga nombres.
+        """
+        for ruta in rutas:
+            if NombresDePila.en_nombre_de_fichero(ruta.stem):
+                return True
+            if self._sensibles and self._sensibles.search(
+                self._normalizar(f"{ruta.parent.name} {ruta.stem}").replace("_", " ")
+            ):
+                return True
+        return False
 
     @staticmethod
     def _normalizar(texto: str) -> str:

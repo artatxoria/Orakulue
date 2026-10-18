@@ -207,3 +207,14 @@ def test_el_coste_por_lotes_es_la_mitad():
     directo = tarifa.coste(ConsumoLlamada("claude-haiku-5-5", 1_000_000, 1_000_000))
     lotes = tarifa.coste(ConsumoLlamada("claude-haiku-5-5", 1_000_000, 1_000_000, por_lotes=True))
     assert directo == Decimal("0.60") and lotes * 2 == directo
+
+
+def test_un_fichero_con_nombre_de_persona_se_trata_como_personal():
+    from orakulue.aplicacion.seleccion_fichables import SeleccionFichables
+    from orakulue.utilidades.nombres_de_pila import NombresDePila
+
+    for nombre in ("lopez_martin_irene", "SanchezVidal_Marta", "Ane Etxeberria", "examen-mikel-larranaga"):
+        assert NombresDePila.en_nombre_de_fichero(nombre), nombre
+    for nombre in ("Mario", "presentacion_final", "Funciones de texto", "Tema 3 - Power Query"):
+        assert not NombresDePila.en_nombre_de_fichero(nombre), nombre
+    assert SeleccionFichables().sensible_por_nombre([Path("/examenes/ibañez_pamela.docx")])

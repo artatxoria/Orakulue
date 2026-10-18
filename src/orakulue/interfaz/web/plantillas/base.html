@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block titulo %}Orakulue{% endblock %}</title>
+<style>
+  /* Todo en línea: la página se usa por la VPN y no carga nada de Internet. */
+  :root { --fondo:#fbfaf7; --texto:#1f2328; --tenue:#5f6670; --linea:#e3e0d8; --acento:#1d5f8a;
+          --aviso:#8a4b1d; --tarjeta:#ffffff; }
+  @media (prefers-color-scheme: dark) {
+    :root { --fondo:#16181b; --texto:#e6e3dc; --tenue:#a2a7ae; --linea:#30343a; --acento:#7fb6dd;
+            --aviso:#e0a36d; --tarjeta:#1d2024; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--fondo); color:var(--texto);
+         font:17px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 46rem; margin: 0 auto; padding: 1rem; }
+  nav { display:flex; gap:1rem; flex-wrap:wrap; padding:.6rem 1rem; border-bottom:1px solid var(--linea); }
+  nav a { color:var(--texto); text-decoration:none; font-weight:600; }
+  nav a.marca { color:var(--acento); margin-right:auto; }
+  a { color:var(--acento); }
+  form.busqueda { display:flex; gap:.5rem; flex-wrap:wrap; margin:.5rem 0 1rem; }
+  input[type=search], textarea { flex:1 1 16rem; font:inherit; padding:.6rem .7rem; border:1px solid var(--linea);
+         border-radius:.5rem; background:var(--tarjeta); color:var(--texto); }
+  textarea { width:100%; min-height:5rem; }
+  button, select { font:inherit; padding:.55rem .9rem; border-radius:.5rem; border:1px solid var(--linea);
+         background:var(--tarjeta); color:var(--texto); }
+  button { background:var(--acento); color:var(--fondo); border-color:var(--acento); font-weight:600; }
+  .resultado { background:var(--tarjeta); border:1px solid var(--linea); border-radius:.6rem;
+         padding:.8rem 1rem; margin:.7rem 0; }
+  .resultado h2 { font-size:1.05rem; margin:0 0 .3rem; }
+  .marcas { color:var(--tenue); font-size:.9rem; }
+  .pasaje { color:var(--tenue); font-size:.95rem; margin:.4rem 0 0; }
+  .ruta { font-size:.85rem; color:var(--tenue); word-break:break-all; }
+  .personal { color:var(--aviso); font-weight:600; }
+  .error { color:var(--aviso); }
+  .ficha h1 { font-size:1.4rem; }
+  .ficha h2 { font-size:1.1rem; margin-top:1.4rem; }
+</style>
+</head>
+<body>
+<nav>
+  <a class="marca" href="/">Orakulue</a>
+  <a href="/">Buscar</a>
+  <a href="/preguntar">Preguntar</a>
+  <a href="/materias">Materias</a>
+</nav>
+<main>
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+{% block contenido %}{% endblock %}
+</main>
+</body>
+</html>

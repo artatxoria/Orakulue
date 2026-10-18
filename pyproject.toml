@@ -8,14 +8,22 @@ requires-python = ">=3.11"
 # Anthropic para escribir las fichas.
 dependencies = [
     "anthropic>=1.15.0",
+    "jinja2>=3.1.6",
+    "markdown-it-py>=4.2.0",
+    "mcp>=2.3.0",
     "numpy>=2.4.6",
+    "starlette>=1.8.0",
+    "uvicorn>=0.54.0",
 ]
 
 [project.scripts]
 orakulue = "orakulue.interfaz.linea_ordenes:principal"
 
 [dependency-groups]
-dev = ["pytest"]
+dev = [
+    "httpx>=0.28.1",
+    "pytest",
+]
 
 [build-system]
 requires = ["hatchling"]

@@ -206,6 +206,40 @@ class OrdenesFichas:
               f"sin coste. Índice: {indice}")
         return 0
 
+    def retirar_personales(self) -> int:
+        """Retira las fichas de documentos que hoy cuentan como personales.
+
+        Sirve cuando las reglas de datos personales se endurecen después de
+        haber fichado: esas fichas ya no deben estar a la vista ni en el
+        buscador. No se borran: van a ``datos/fichas_retiradas`` (fuera de
+        git) y su registro, a una tabla aparte.
+
+        Returns:
+            Siempre 0.
+        """
+        from orakulue.aplicacion.catalogo_documentos import CatalogoDocumentos
+        from orakulue.infraestructura.almacen_indice import AlmacenIndice
+
+        base = self._configuracion.base_datos
+        with AlmacenInventario(base) as inventario:
+            documentos = list(inventario.documentos())
+        with AlmacenFichas(base) as fichas:
+            todas = fichas.todas()
+            huellas = {ruta: h for h, (_, _, ruta) in fichas.con_datos().items()}
+        with AlmacenAnalisis(base) as analisis:
+            marcas = analisis.marcas()
+        catalogo = CatalogoDocumentos().construir(documentos, todas, huellas, marcas)
+        retirar = {h for h, info in catalogo.items() if info.personal and info.ruta_ficha is not None}
+        destino = self._datos / "fichas_retiradas"
+        with AlmacenFichas(base) as fichas:
+            for huella in sorted(retirar):
+                fichas.retirar(huella, destino, "datos personales (reglas endurecidas tras fichar)")
+            indice = IndiceFichas().escribir(self._fichas.carpeta, fichas.todas())
+        with AlmacenIndice(base) as almacen_indice:
+            almacen_indice.olvidar_tipo(retirar, "ficha")
+        print(f"Retiradas {len(retirar)} fichas a {destino}. Índice: {indice}")
+        return 0
+
     def _seleccionar(self) -> ResultadoSeleccion:
         """Aplica las reglas de selección sobre el inventario y los análisis."""
         base = self._configuracion.base_datos

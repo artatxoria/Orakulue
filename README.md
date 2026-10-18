@@ -20,8 +20,8 @@ otro nombre. Orakulue:
 4. **Escribe una ficha** por documento con la teoría, los ejercicios
    aprovechables y las ideas de curso (fase 4, disponible).
 5. **Permite buscar y preguntar** al fondo, citando las fuentes (fase 5,
-   disponible), y hacerlo desde cualquier dispositivo a través de una VPN
-   (fase 6).
+   disponible), y hacerlo desde cualquier dispositivo a través de una VPN o
+   desde Claude (fase 6, disponible).
 
 El plan completo está en [`docs/PLAN.md`](docs/PLAN.md).
 
@@ -198,6 +198,25 @@ uv run orakulue evaluar-busqueda              # mide el buscador
   (`datos/evaluacion/preguntas.toml`, privado) y mide el acierto en los diez
   primeros de cada modo de búsqueda.
 
+### Web por la VPN y conector para Claude (fase 6)
+
+```bash
+uv run orakulue servir                 # web en 10.8.0.5:8010 (solo la VPN)
+uv run orakulue conector-mcp           # conector para Claude (lo arranca Claude)
+```
+
+- **Web**: buscar, leer fichas, descargar los originales, preguntar y ver el
+  índice por materias, desde la tablet o el móvil conectados a la VPN. Escucha
+  solo en la dirección de la VPN y es de solo lectura. Solo descarga
+  documentos del inventario, pedidos por su huella. Para que arranque sola:
+  `docs/systemd/orakulue-web.service` (servicio de usuario). Hay que abrir el
+  puerto en el cortafuegos solo para la interfaz de la VPN.
+- **Conector MCP** para Claude Code y la app de escritorio en el mismo
+  equipo, por stdio: herramientas `buscar`, `leer_ficha`, `leer_pasajes` y
+  `materias`. Ejemplo de configuración en `docs/mcp/ejemplo.mcp.json`. Lo que
+  devuelve llega a Anthropic, así que de los documentos con datos personales
+  solo da el título y el aviso, nunca su contenido.
+
 Pruebas:
 
 ```bash
@@ -210,14 +229,15 @@ uv run pytest
 Orakulue/
 ├── configuracion/          ejemplo de configuración (la real no se publica)
 ├── datos/                  inventario e informes (privado, fuera de git)
-├── docs/                   plan, diseño de la fase 4 y artículos del blog
+├── docs/                   plan, diseños de fases, servicio systemd, ejemplo
+│                           del conector MCP y artículos del blog
 ├── src/orakulue/
 │   ├── dominio/            entidades: Documento, GrupoDuplicados…
 │   ├── infraestructura/    disco, huellas, SQLite, configuración y
 │   │                       extractores de texto
 │   ├── aplicacion/         casos de uso: inventariar, detectar duplicados,
 │   │                       planificar, ejecutar y deshacer la centralización
-│   ├── interfaz/           línea de órdenes e informes Markdown y CSV
+│   ├── interfaz/           línea de órdenes, informes, web y conector MCP
 │   └── utilidades/         formato de cifras, tamaños y rutas
 └── tests/                  pruebas con pytest
 ```
