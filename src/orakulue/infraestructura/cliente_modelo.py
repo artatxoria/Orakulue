@@ -122,6 +122,48 @@ class ClienteModelo:
                 respuesta = self._cliente.messages.create(**parametros)
         return self.interpretar(respuesta, por_lotes=False)
 
+    def pedir_json(
+        self, modelo: str, instrucciones: str, mensaje: str, esquema: dict[str, Any], esfuerzo: str | None = None,
+    ) -> tuple[dict[str, Any], ConsumoLlamada]:
+        """Pide una respuesta JSON que cumpla un esquema (salida estructurada).
+
+        Como ``fichar``, pero con instrucciones y esquema propios: lo usan las
+        propuestas de la fase 7. En Opus y Sonnet se activa el respaldo del
+        servidor ante negativas por falso positivo.
+
+        Args:
+            modelo: identificador del modelo.
+            instrucciones: instrucciones de sistema.
+            mensaje: mensaje del usuario.
+            esquema: esquema JSON de la respuesta.
+            esfuerzo: nivel de esfuerzo; por omisión, el del cliente.
+
+        Returns:
+            Los datos y el consumo.
+
+        Raises:
+            ErrorSaldoAgotado: si la cuenta no tiene saldo.
+            ErrorLlamada: por cualquier otro fallo o respuesta inutilizable.
+        """
+        parametros = {
+            "model": modelo,
+            "max_tokens": 16_000,
+            "system": [{"type": "text", "text": instrucciones, "cache_control": {"type": "ephemeral"}}],
+            "messages": [{"role": "user", "content": mensaje}],
+            "output_config": {
+                "effort": esfuerzo or self._esfuerzo,
+                "format": {"type": "json_schema", "schema": esquema},
+            },
+        }
+        with self._traducir_errores():
+            if modelo in self._CON_RESPALDO:
+                respuesta = self._cliente.beta.messages.create(
+                    **parametros, betas=["server-side-fallback-2026-07-01"], fallbacks="default"
+                )
+            else:
+                respuesta = self._cliente.messages.create(**parametros)
+        return self.interpretar(respuesta, por_lotes=False)
+
     def redactar(self, modelo: str, instrucciones: str, mensaje: str) -> tuple[str, ConsumoLlamada]:
         """Pide una respuesta en texto libre (para contestar preguntas).
 

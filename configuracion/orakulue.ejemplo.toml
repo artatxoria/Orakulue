@@ -118,6 +118,24 @@ saldo_declarado_dolares = ""
 # Esfuerzo del modelo: «low» basta para fichar y gasta menos razonamiento.
 esfuerzo = "low"
 
+[propuestas]
+# Carpeta de las propuestas de cursos y píldoras.
+carpeta = "~/Documentos/formakuntza/propuestas"
+# Modelo que redacta, y los que se comparan en la prueba.
+modelo = "claude-sonnet-5-5"
+modelos_prueba = ["claude-sonnet-5-5", "claude-opus-5-5"]
+propuestas_prueba = 3
+# Tamaño de la tanda.
+cursos = 20
+pildoras = 20
+esfuerzo = "medium"
+# Catálogos actuales: ficheros de partes con un \input por curso.
+catalogos = [
+    "~/cursos/catalogo/partes/empresas.tex",
+    "~/cursos/catalogo/partes/euskaraz.tex",
+    "~/cursos/catalogo/partes/subvencionada.tex",
+]
+
 [rutas]
 base_datos = "datos/inventario.sqlite"
 informes = "datos/informes"

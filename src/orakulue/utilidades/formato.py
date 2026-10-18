@@ -1,5 +1,7 @@
 """Formato legible de tamaños, cifras y rutas para los informes."""
 
+import re
+import unicodedata
 from pathlib import Path
 
 
@@ -52,6 +54,22 @@ class Formato:
             relativa = ruta.relative_to(personal)
             return "~" if str(relativa) == "." else f"~/{relativa}"
         return str(ruta)
+
+    @staticmethod
+    def slug(texto: str, maximo: int = 70) -> str:
+        """Convierte un texto en un nombre de fichero seguro: sin tildes ni signos.
+
+        Args:
+            texto: texto de partida (un título).
+            maximo: longitud máxima.
+
+        Returns:
+            Texto como ``Tablas-de-Excel-para-empleados``, o ``documento`` si
+            queda vacío.
+        """
+        base = unicodedata.normalize("NFKD", texto)
+        base = "".join(c for c in base if not unicodedata.combining(c))
+        return re.sub(r"[^A-Za-z0-9]+", "-", base).strip("-")[:maximo].strip("-") or "documento"
 
     @staticmethod
     def carpeta_resumida(ruta: Path, personal: Path, niveles: int) -> Path:

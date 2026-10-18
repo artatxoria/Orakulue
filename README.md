@@ -22,6 +22,8 @@ otro nombre. Orakulue:
 5. **Permite buscar y preguntar** al fondo, citando las fuentes (fase 5,
    disponible), y hacerlo desde cualquier dispositivo a través de una VPN o
    desde Claude (fase 6, disponible).
+6. **Propone cursos y píldoras nuevos** a partir de lo que hay en el fondo,
+   con los documentos que sostienen cada propuesta (fase 7, disponible).
 
 El plan completo está en [`docs/PLAN.md`](docs/PLAN.md).
 
@@ -216,6 +218,30 @@ uv run orakulue conector-mcp           # conector para Claude (lo arranca Claude
   `materias`. Ejemplo de configuración en `docs/mcp/ejemplo.mcp.json`. Lo que
   devuelve llega a Anthropic, así que de los documentos con datos personales
   solo da el título y el aviso, nunca su contenido.
+
+### Propuestas de cursos y píldoras (fase 7)
+
+```bash
+uv run orakulue candidatas                     # reúne y puntúa las ideas (local)
+uv run orakulue prueba-propuestas --ejecutar   # compara modelos con unas pocas
+uv run orakulue proponer                       # simulacro de la tanda y su coste
+uv run orakulue proponer --ejecutar            # redacta la tanda
+uv run orakulue exportar-propuesta <clave>     # borrador para Bibliotecario
+```
+
+- Las ideas de curso y de píldora de las fichas se agrupan por significado y
+  se puntúan con criterios explicables: respaldo (cuántos documentos y de qué
+  interés), ejercicios disponibles, vigencia, material en euskera y relación
+  con el catálogo actual, que se lee de sus ficheros LaTeX. Lo que ya se
+  ofrece baja en la lista y se indica con qué curso coincide.
+- Al elegir la tanda se funden las candidatas casi iguales.
+- La propuesta de curso sigue los apartados del catálogo. La duración queda
+  «a decidir». Cita los documentos fuente y separa lo que ya existe de lo que
+  falta por preparar. La de píldora tiene su propio esquema y su plantilla,
+  para adaptarla a un formato concreto cuando haga falta.
+- Las propuestas se guardan en la carpeta `carpeta` de `[propuestas]`, con un
+  índice, y se ven también en la web. La exportación crea un `curso.yaml` de
+  borrador, con todos los apartados `origen: propio`, y una lista de fuentes.
 
 Pruebas:
 

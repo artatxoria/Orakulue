@@ -155,3 +155,10 @@ Esto se fija en el `.gitignore` desde el primer commit.
    no admite enlaces: Syncthing, repositorios git, `anaconda3`, `Plantillas`,
    cachés, `etxea` y `Facturación`. La fase 1 entrega también la lista de
    carpetas encontradas para confirmar el criterio antes de mover nada.
+
+## Estado (18 de octubre de 2026)
+
+Las siete fases están programadas. Los diseños detallados de las fases 4 a 7
+están en `docs/FASE4_DISENO.md` … `docs/FASE7_DISENO.md`, y cada fase tiene su
+artículo en `docs/articulos/` (sin publicar). Las cifras reales de cada fase
+están en esos artículos; este plan conserva la intención de partida.

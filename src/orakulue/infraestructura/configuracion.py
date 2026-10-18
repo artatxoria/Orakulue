@@ -11,6 +11,7 @@ from pathlib import Path
 
 from orakulue.infraestructura.configuracion_centralizacion import ConfiguracionCentralizacion
 from orakulue.infraestructura.configuracion_fichas import ConfiguracionFichas
+from orakulue.infraestructura.configuracion_propuestas import ConfiguracionPropuestas
 
 
 class ErrorConfiguracion(Exception):
@@ -41,6 +42,7 @@ class Configuracion:
         centralizacion: parámetros de la fase 2, o ``None`` si el fichero no
             tiene sección ``[centralizacion]``.
         fichas: parámetros de la fase 4 (sección ``[fichas]``).
+        propuestas: parámetros de la fase 7 (sección ``[propuestas]``).
     """
 
     raices: tuple[Path, ...]
@@ -58,6 +60,7 @@ class Configuracion:
     excepciones: tuple[Path, ...] = ()
     centralizacion: ConfiguracionCentralizacion | None = None
     fichas: ConfiguracionFichas = ConfiguracionFichas.desde_seccion({})
+    propuestas: ConfiguracionPropuestas = ConfiguracionPropuestas.desde_seccion({})
 
     @classmethod
     def desde_fichero(cls, ruta_fichero: Path, raiz_proyecto: Path) -> "Configuracion":
@@ -108,6 +111,7 @@ class Configuracion:
                 excepciones=tuple(cls._absoluta(r) for r in inventario.get("excepciones", [])),
                 centralizacion=cls._centralizacion(datos.get("centralizacion"), raiz_proyecto),
                 fichas=ConfiguracionFichas.desde_seccion(datos.get("fichas", {})),
+                propuestas=ConfiguracionPropuestas.desde_seccion(datos.get("propuestas", {})),
             )
         except ValueError as error:
             raise ErrorConfiguracion(f"{ruta_fichero}: {error}") from error

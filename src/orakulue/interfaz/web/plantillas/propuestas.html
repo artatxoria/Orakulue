@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block titulo %}Propuestas · Orakulue{% endblock %}
+{% block contenido %}
+{% if not propuestas %}<p>Todavía no hay propuestas redactadas.</p>{% endif %}
+{% for tipo, titulo in (("curso", "Cursos"), ("pildora", "Píldoras")) %}
+{% set lista = propuestas | selectattr("tipo", "equalto", tipo) | list %}
+{% if lista %}
+<h2>{{ titulo }} ({{ lista | length }})</h2>
+{% for p in lista %}
+<article class="resultado">
+  <h2><a href="/propuesta/{{ p.clave }}">{{ p.titulo }}</a></h2>
+  <div class="marcas">{{ p.puntuacion }} puntos{% if p.en_catalogo %} · {{ p.en_catalogo }}{% endif %}</div>
+</article>
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% endblock %}

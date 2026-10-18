@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block titulo %}{{ propuesta.titulo }} · Orakulue{% endblock %}
+{% block contenido %}
+<div class="marcas">{{ "Curso" if propuesta.tipo == "curso" else "Píldora" }} · {{ propuesta.puntuacion }} puntos
+{% if propuesta.en_catalogo %} · {{ propuesta.en_catalogo }}{% endif %} · clave <code>{{ propuesta.clave }}</code></div>
+<article class="ficha">{{ html | safe }}</article>
+{% endblock %}

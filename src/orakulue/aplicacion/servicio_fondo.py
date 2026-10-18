@@ -28,6 +28,7 @@ from orakulue.infraestructura.almacen_analisis import AlmacenAnalisis
 from orakulue.infraestructura.almacen_fichas import AlmacenFichas
 from orakulue.infraestructura.almacen_indice import AlmacenIndice
 from orakulue.infraestructura.almacen_inventario import AlmacenInventario
+from orakulue.infraestructura.almacen_propuestas import AlmacenPropuestas
 from orakulue.infraestructura.catalogo_tarifas import CatalogoTarifas
 from orakulue.infraestructura.cliente_local import ClienteLocal
 from orakulue.infraestructura.cliente_modelo import ClienteModelo
@@ -149,6 +150,20 @@ class ServicioFondo:
             lista.sort(key=lambda i: (orden[i.interes], i.titulo.lower()))
         return dict(sorted(por_materia.items(),
                            key=lambda par: (par[0] == ClasificadorMaterias.OTRAS, -len(par[1]))))
+
+    def propuestas(self) -> list:
+        """Propuestas redactadas (fase 7) con su fichero, de mejor a peor."""
+        with AlmacenPropuestas(self._configuracion.base_datos) as almacen:
+            return almacen.todas()
+
+    def propuesta(self, clave: str) -> tuple | None:
+        """Una propuesta y su Markdown, o ``None`` si no existe."""
+        with AlmacenPropuestas(self._configuracion.base_datos) as almacen:
+            encontrada = almacen.por_clave(clave)
+        if encontrada is None:
+            return None
+        propuesta, ruta = encontrada
+        return propuesta, ruta.read_text(encoding="utf-8") if ruta.is_file() else ""
 
     def preguntar(self, pregunta: str, local: bool) -> RespuestaConCoste:
         """Responde a una pregunta y anota el gasto si se usa la API.

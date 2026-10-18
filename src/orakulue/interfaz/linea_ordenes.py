@@ -19,6 +19,11 @@
 - ``evaluar-busqueda``: mide el buscador con el juego de preguntas de prueba.
 - ``servir``: arranca la web en la dirección de la VPN.
 - ``conector-mcp``: arranca el conector para Claude (lo lanza Claude, no tú).
+- ``candidatas``: reúne y puntúa las ideas de cursos y píldoras (local).
+- ``prueba-propuestas``: compara modelos redactando las mejores (simulacro;
+  con ``--ejecutar``, de verdad).
+- ``proponer``: redacta la tanda de propuestas (simulacro; con ``--ejecutar``).
+- ``exportar-propuesta``: borrador para Bibliotecario de una propuesta.
 - ``analizar``: repite el análisis de casi duplicados y datos personales.
 """
 
@@ -40,6 +45,7 @@ from orakulue.interfaz.informe_duplicados import InformeDuplicados
 from orakulue.interfaz.ordenes_busqueda import OrdenesBusqueda
 from orakulue.interfaz.ordenes_centralizacion import OrdenesCentralizacion
 from orakulue.interfaz.ordenes_fichas import OrdenesFichas
+from orakulue.interfaz.ordenes_propuestas import OrdenesPropuestas
 from orakulue.interfaz.ordenes_texto import OrdenesTexto
 from orakulue.utilidades.formato import Formato
 
@@ -101,6 +107,15 @@ class LineaOrdenes:
         ordenes.add_parser(
             "retirar-fichas-personales", help="retira (sin borrar) las fichas de documentos personales"
         )
+        ordenes.add_parser("candidatas", help="reúne y puntúa las ideas de cursos y píldoras (local)")
+        prueba_propuestas = ordenes.add_parser(
+            "prueba-propuestas", help="compara modelos redactando las mejores candidatas (simulacro por defecto)"
+        )
+        prueba_propuestas.add_argument("--ejecutar", action="store_true", help="llama de verdad a los modelos (gasta)")
+        proponer = ordenes.add_parser("proponer", help="redacta la tanda de propuestas (simulacro por defecto)")
+        proponer.add_argument("--ejecutar", action="store_true", help="redacta de verdad (gasta)")
+        exportar = ordenes.add_parser("exportar-propuesta", help="borrador para Bibliotecario de una propuesta")
+        exportar.add_argument("clave", help="clave de la propuesta (está en el índice)")
         fichar = ordenes.add_parser("fichar", help="ficha el fondo por lotes (simulacro por defecto)")
         fichar.add_argument("--ejecutar", action="store_true", help="envía el lote de verdad (gasta)")
         fichar.add_argument(
@@ -142,6 +157,14 @@ class LineaOrdenes:
             if opciones.orden == "preguntar":
                 return busqueda.preguntar(opciones.pregunta, opciones.local)
             return busqueda.evaluar(opciones.preguntas)
+        if opciones.orden == "candidatas":
+            return OrdenesPropuestas(configuracion).candidatas()
+        if opciones.orden == "prueba-propuestas":
+            return OrdenesPropuestas(configuracion).prueba(opciones.ejecutar)
+        if opciones.orden == "proponer":
+            return OrdenesPropuestas(configuracion).proponer(opciones.ejecutar)
+        if opciones.orden == "exportar-propuesta":
+            return OrdenesPropuestas(configuracion).exportar(opciones.clave)
         if opciones.orden == "retirar-fichas-personales":
             return OrdenesFichas(configuracion).retirar_personales()
         if opciones.orden == "fichar":

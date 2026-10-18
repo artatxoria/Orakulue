@@ -22,6 +22,7 @@ from orakulue.infraestructura.error_saldo_agotado import ErrorSaldoAgotado
 from orakulue.utilidades.formato import Formato
 
 _HUELLA = re.compile(r"[0-9a-f]{64}")
+_CLAVE_PROPUESTA = re.compile(r"(curso|pildora)-[0-9a-f]{10}-[0-9]{4}")
 
 
 class AplicacionWeb:
@@ -50,6 +51,8 @@ class AplicacionWeb:
             Route("/original/{huella}", self.original),
             Route("/preguntar", self.preguntar, methods=["GET", "POST"]),
             Route("/materias", self.materias),
+            Route("/propuestas", self.propuestas),
+            Route("/propuesta/{clave}", self.propuesta),
         ])
 
     async def inicio(self, peticion: Request) -> Response:
@@ -106,6 +109,20 @@ class AplicacionWeb:
     async def materias(self, peticion: Request) -> Response:
         """Índice por materias."""
         return self._pagina(peticion, "materias.html", materias=self._servicio.materias())
+
+    async def propuestas(self, peticion: Request) -> Response:
+        """Listado de propuestas de cursos y píldoras (fase 7)."""
+        return self._pagina(peticion, "propuestas.html", propuestas=[p for p, _ in self._servicio.propuestas()])
+
+    async def propuesta(self, peticion: Request) -> Response:
+        """Una propuesta, en HTML."""
+        clave = peticion.path_params.get("clave", "")
+        encontrada = self._servicio.propuesta(clave) if _CLAVE_PROPUESTA.fullmatch(clave) else None
+        if encontrada is None:
+            return self._no_encontrado(peticion)
+        propuesta, markdown = encontrada
+        return self._pagina(peticion, "propuesta.html", propuesta=propuesta,
+                            html=self._markdown.render(self._sin_cabecera(markdown)))
 
     def _pagina(self, peticion: Request, plantilla: str, **datos) -> HTMLResponse:
         """Renderiza una plantilla."""

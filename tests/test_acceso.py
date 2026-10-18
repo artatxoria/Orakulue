@@ -128,3 +128,20 @@ def test_el_conector_nunca_devuelve_el_contenido_de_un_documento_personal(fondo)
     assert "Manual de tablas dinámicas" in llamar("leer_ficha", huella=huella["tablas.pdf"])
     assert "paso a paso" in llamar("leer_pasajes", huella=huella["tablas.pdf"], consulta="tablas dinámicas")
     assert SECRETO not in llamar("materias")
+
+
+def test_la_web_muestra_las_propuestas_y_rechaza_claves_raras(fondo, tmp_path):
+    from orakulue.dominio.propuesta import Propuesta
+    from orakulue.infraestructura.almacen_propuestas import AlmacenPropuestas
+
+    servicio, huella, casa = fondo
+    ruta = tmp_path / "propuesta.md"
+    ruta.write_text("---\ntipo: curso\n---\n# Curso de tablas\n\nTexto de la propuesta.", encoding="utf-8")
+    with AlmacenPropuestas(servicio._configuracion.base_datos) as almacen:
+        almacen.guardar(Propuesta("curso", "curso-0123456789-0001", "m", {"titulo": "Curso de tablas"},
+                                  (huella["tablas.pdf"],), 9.0), ruta)
+    cliente = TestClient(AplicacionWeb(servicio, casa).construir())
+    assert "Curso de tablas" in cliente.get("/propuestas").text
+    pagina = cliente.get("/propuesta/curso-0123456789-0001")
+    assert pagina.status_code == 200 and "Texto de la propuesta" in pagina.text
+    assert cliente.get("/propuesta/..%2Fetc").status_code == 404
